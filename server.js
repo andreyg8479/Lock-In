@@ -7,7 +7,7 @@ const wss = new WebSocket.Server({ port: PORT });
 
 console.log(`Server running at ws://localhost:${PORT}`);
 
-
+// TODO actually get libary in github
 
 //Runs when a browser connects, basicly this is any individual client
 wss.on("connection", (socket) => {
@@ -19,7 +19,7 @@ wss.on("connection", (socket) => {
   socket.on("message", (message) => {
     console.log("Received:", message.toString());
 	
-  }
+  });
   
   
   
