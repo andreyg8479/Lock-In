@@ -19,7 +19,7 @@ const State = Object.freeze({ //this can be replaced with an actual enum if we s
 wss.on("connection", (socket) => {
   console.log("Client connected");
   
-  SM = State.STANDARD; //State Machine
+  let SM = State.STANDARD; //State Machine
   
   //socket.send(); //use this to send stuff to the client
   
@@ -35,8 +35,24 @@ wss.on("connection", (socket) => {
 			//code
 			break;
 		case State.KEY_SETUP:
-			//code
-			break;
+			//Client Has Asked to setup key verification
+			
+
+			/* We sent this to the client last, should put this wherever that is
+			
+			const unencKey = generateUnencryptedKey()
+			socket.send(unencKey);
+			//Store unencKey in the database
+			
+			*/
+			
+			//expecting the encrypted version back
+			let encKey = message.toString();
+			
+			//Store encKey in the database
+			
+			
+			break; //End of KEY_SETUP
 		default:
 			console.log("ERROR: Someone is in an undefined state");	
 		
