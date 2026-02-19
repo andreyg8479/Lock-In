@@ -51,3 +51,13 @@ wss.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
+
+
+function generateUnencryptedKey() {
+  const charCount = 32;
+  let key = "";
+  for (let i = 0; i < charCount; i++) {
+	  key = key + String.fromCharCode(Math.floor(Math.random() * 65536)); //gives random character
+  }
+  return key;
+}
