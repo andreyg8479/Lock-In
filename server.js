@@ -27,6 +27,8 @@ wss.on("connection", (socket) => {
   socket.on("message", (message) => {
     console.log("Received:", message.toString());
 	
+	const recieved = JSON.parse(message.toString());
+	
 	switch (SM) { //handle the request based on the state
 		case State.STANDARD:
 			//code
@@ -41,13 +43,15 @@ wss.on("connection", (socket) => {
 			/* We sent this to the client last, should put this wherever that is
 			
 			const unencKey = generateUnencryptedKey()
-			socket.send(unencKey);
+			socket.send(JSON.stringify({
+				key: unencKey
+			})););
 			//Store unencKey in the database
 			
 			*/
 			
 			//expecting the encrypted version back
-			let encKey = message.toString();
+			let encKey = recieved.key;
 			
 			//Store encKey in the database
 			
