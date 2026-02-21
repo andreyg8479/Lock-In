@@ -6,6 +6,24 @@ const http = require("http"); // for http which I apparently need to connect to 
 const usersByUsername = new Map();
 // replace with DB eventually
 
+// registration helper, checks username and password validity 
+function handleRegister(username, password) {
+  if (!username) {
+    return { error: "Username required" };
+  }
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters" };
+  }
+  if (usersByUsername.has(username)) {
+    return { error: "Username already exists" };
+  }
+
+  const userId = `u_${Date.now()}`;
+  usersByUsername.set(username, { userId, username, password });
+
+  return { userId };
+}
+
 const WebSocket = require("ws");
 
 const PORT = process.env.PORT || 8080;
@@ -73,35 +91,24 @@ wss.on("connection", (socket) => {
           const username = String(recieved.username ?? "").trim();
           const password = String(recieved.password ?? "");
 
-          if (!username) {
-            socket.send(
-              JSON.stringify({
-                type: "REGISTER_ERROR",
-                message: "Username required",
-              }),
-            );
-            break;
-          }
-          if (password.length < 8) {
-            socket.send(
-              JSON.stringify({
-                type: "REGISTER_ERROR",
-                message: "Password must be at least 8 characters",
-              }),
-            );
-            break;
-          }
-          if (usersByUsername.has(username)) {
-            socket.send(
-              JSON.stringify({
-                type: "REGISTER_ERROR",
-                message: "Username already exists",
-              }),
-            );
-            break;
+          if (recieved.type === "REGISTER_REQUEST") {
+            const result = handleRegister(recieved.username, recieved.password);
+
+            if (result.error) {
+              socket.send(
+                JSON.stringify({
+                  type: "REGISTER_ERROR",
+                  message: result.error,
+                }),
+              );
+            } else {
+              socket.send(
+                JSON.stringify({ type: "REGISTER_OK", userId: result.userId }),
+              );
+            }
           }
 
-          const userId = `u_${Date.now()}`;
+          const userId = result.userId;
           usersByUsername.set(username, { userId, username, password }); // TEMP
 
           console.warn(
