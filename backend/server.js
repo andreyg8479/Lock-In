@@ -55,7 +55,14 @@ wss.on("connection", (socket) => {
   socket.on("message", (message) => {
     console.log("Received:", message.toString());
 	
-	const recieved = JSON.parse(message.toString());
+	let recieved;
+
+	try {
+		recieved = JSON.parse(message.toString());
+	} catch (e) {
+		socket.send(JSON.stringify({ type: "ERROR", message: "Incorrect JSON"}));
+		return;
+	}
 	
 	switch (SM) { //handle the request based on the state
 		case State.STANDARD:
