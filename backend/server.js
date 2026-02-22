@@ -2,11 +2,8 @@ const express = require("express");
 const path = require("path"); //for file paths
 const http = require("http"); // for http which I apparently need to connect to react
 
-// temporary check for duplicate usernames
-const usersByUsername = new Map();
-// replace with DB eventually
 
-// registration helper, checks username and password validity 
+// registration helper, checks username and password validity
 function handleRegister(username, password) {
   if (!username) {
     return { error: "Username required" };
@@ -18,6 +15,11 @@ function handleRegister(username, password) {
     return { error: "Username already exists" };
   }
 
+  // temporary check for duplicate usernames
+const { createRegistrationStore, handleRegister } = require("./src/registration");
+const usersByUsername = createRegistrationStore();
+// replace with DB eventually
+
   const userId = `u_${Date.now()}`;
   usersByUsername.set(username, { userId, username, password });
 
@@ -25,6 +27,7 @@ function handleRegister(username, password) {
 }
 
 const WebSocket = require("ws");
+const { createRegistrationStore } = require("./src/registration");
 
 const PORT = process.env.PORT || 8080;
 
@@ -92,20 +95,29 @@ wss.on("connection", (socket) => {
           const password = String(recieved.password ?? "");
 
           if (recieved.type === "REGISTER_REQUEST") {
-            const result = handleRegister(recieved.username, recieved.password);
+            const result = handleRegister(
+              usersByUsername,
+              recieved.username,
+              recieved.password,
+            );
 
-            if (result.error) {
+            if (!result.ok) {
               socket.send(
                 JSON.stringify({
                   type: "REGISTER_ERROR",
                   message: result.error,
                 }),
               );
-            } else {
-              socket.send(
-                JSON.stringify({ type: "REGISTER_OK", userId: result.userId }),
-              );
+              break;
             }
+
+            console.warn(
+              "[CONSOLE WARNING] Password recovery not implemented; forgetting it may be unrecoverable.",
+            );
+            socket.send(
+              JSON.stringify({ type: "REGISTER_OK", userId: result.userId }),
+            );
+            break;
           }
 
           const userId = result.userId;
