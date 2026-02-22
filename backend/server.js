@@ -53,9 +53,9 @@ wss.on("connection", (socket) => {
   
   //This runs when this client sends a message (CURRENTLY STRINGS)
   socket.on("message", (message) => {
-    console.log("Received:", message.toString());
 	
-	const recieved = JSON.parse(message.toString());
+	try {
+	const recieved = JSON.parse(event.data);
 	
 	switch (SM) { //handle the request based on the state
 		case State.STANDARD:
@@ -106,6 +106,10 @@ wss.on("connection", (socket) => {
 		default:
 			console.log("ERROR: Someone is in an undefined state");	
 		
+	}
+	
+	} catch { //just in case, also for debug maybe
+		console.log("Received:", message.toString());
 	}
 	
   });

@@ -1,10 +1,12 @@
 
 
-
 let socket : WebSocket | null = null;
 
 
-export function connectSocket(onMessage: (data: string) => void) {
+
+export function connectSocket(onMessage: (data: any) => void) {
+
+	if (socket) return;
 
 	//hopfully connects to the server
 	socket = new WebSocket('ws://localhost:8080')
@@ -14,7 +16,13 @@ export function connectSocket(onMessage: (data: string) => void) {
 	};
 	
 	socket.onmessage = (event) => {
-		onMessage(event.data);
+		//for json i guess
+		try {
+			const data = JSON.parse(event.data);
+			onMessage(data);
+		} catch {
+			onMessage(event.data);
+		}
 	};
 	
 	socket.onclose = () => {
