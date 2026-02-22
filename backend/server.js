@@ -60,7 +60,25 @@ wss.on("connection", (socket) => {
 	switch (SM) { //handle the request based on the state
 		case State.STANDARD:
 			//code
-			break;
+			
+			switch (recieved.command) { //STANDARD COMMANDS SWITCH
+				case "Override":
+					//delete old note from database
+					//at users data at recieved.note_name store recieved.note_data
+					
+					if (recieved.name_change) {
+						
+						//in users nodes names list remove recieved.old_name and add recieved.note_name
+						
+					}
+					
+					//update node last update time 
+				
+				default:
+					console.log("ERROR: Someone is in an undefined standard command");	
+			} //end standard swtich
+			
+			break; // end standard
 		case State.VERIFYING:
 			//code
 			break;
