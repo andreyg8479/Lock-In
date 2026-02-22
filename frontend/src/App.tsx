@@ -1,37 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react' //useState can also be added here but idk if its needed
+import { connectSocket, sendMessage } from "./WebSocketConnect";
 import './App.css'
 
 function App() {
-	const [messages, setMessages] = useState<string[]>([])
   
 	useEffect(() => {
-		//hopfully connects to the server
-		const ws = new WebSocket('ws://localhost:8080')
 		
-		ws.onopen = () => {
-			console.log("Connected to server")
-		};
+		connectSocket((data) => {
+			console.log("Got data");
+			console.log(data);
+		});
 		
-		ws.onmessage = (event) => {
-			setMessages(prev => [...prev, event.data])
-			//ws.send("Got your message"); //this isnt json dont send like this
-		}
-		
-		ws.onclose = () => {
-			console.log("Connection closed")
-		}
-		
-		return () => ws.close() // clean up stuff
 	}, [])
 
   return (
 	<div>
-		<h1>WebSocket Messages Experiment</h1>
-		<ul>
-			{messages.map((msg, idx) => (
-				<li key={idx}>{msg}</li>
-			))}
-		</ul>
+		<button onClick={() => sendMessage("Hello Server!")}>
+		Send Hello
+      </button>
 	</div>
   )
 }
