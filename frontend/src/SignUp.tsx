@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./SignUp.css";
 
 const SignUp: React.FC = () => {
+	const navigate = useNavigate();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -16,6 +18,7 @@ const SignUp: React.FC = () => {
 		}
 
 		console.log("Signing up with:", { name, email, password });
+		navigate("/noteEdit");
 	};
 
 	return (
@@ -77,6 +80,9 @@ const SignUp: React.FC = () => {
 						Sign Up
 					</button>
 				</form>
+                <div className="Login">
+                <Link to="/Login">(Login)</Link>
+                </div>
 			</div>
 		</div>
 	);

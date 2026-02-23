@@ -1,14 +1,17 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
 const Login: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const navigate = useNavigate();
 
 	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		// TODO: replace with real login call to backend
 		console.log("Logging in with:", { email, password });
+		navigate("/noteEdit");
 	};
 
 	return (
@@ -46,6 +49,9 @@ const Login: React.FC = () => {
 						Login
 					</button>
 				</form>
+                <div className="SignUp">
+                <Link to="/SignUp">(Sign Up)</Link>
+                </div>
 			</div>
 		</div>
 	);

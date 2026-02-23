@@ -92,3 +92,35 @@
 	box-shadow: none;
 	filter: brightness(0.98);
 }
+
+/* Link to Sign Up on the login page */
+.SignUp {
+	margin-top: 16px;
+	text-align: center;
+	font-size: 0.85rem;
+	color: #9ca3af;
+}
+
+.SignUp a {
+	display: inline-block;
+	padding: 6px 14px;
+	border-radius: 999px;
+	border: 1px solid #4b5563;
+	color: #e5e7eb;
+	text-decoration: none;
+	transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+		transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.SignUp a:hover {
+	background-color: #111827;
+	border-color: #38bdf8;
+	color: #f9fafb;
+	transform: translateY(-1px);
+	box-shadow: 0 8px 16px rgba(15, 23, 42, 0.8);
+}
+
+.SignUp a:active {
+	transform: translateY(0);
+	box-shadow: none;
+}
