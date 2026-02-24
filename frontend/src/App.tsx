@@ -15,6 +15,22 @@ import SignUp from "./SignUp";
 function PagesList() {
 	return (
 		<div>
+			<div>
+				<h1>Debug Select Page Menu</h1>
+				<Link to="/Home">(Home)</Link>
+				<Link to="/NoteEdit"> (NoteEdit)   </Link>
+				<Link to="/SignUp">(SignUp)</Link>
+				<Link to="/Login"> (Login)   </Link>
+				<Link to="/testing">(Testing)</Link>
+			</div>	
+		</div>	
+	);
+}
+
+
+function Home() {
+	return (
+		<div>
 			<h1>Welcome to LockIn!</h1>
 			<div>
 				<Link to="/SignUp">(Sign Up)</Link>
@@ -43,9 +59,10 @@ function App() {
 	<Router>
 		<Routes>
 			<Route path="/" element={<PagesList />} />
+			<Route path="/Home" element={<Home />} />
 			<Route path="/SignUp" element={<SignUp />} />
 			<Route path="/Login" element={<Login />} />
-			<Route path="/noteEdit" element={<NoteEdit />} />
+			<Route path="/NoteEdit" element={<NoteEdit />} />
 			<Route path="/testing" element={<Testing />} />
 		</Routes>
 	</Router>
