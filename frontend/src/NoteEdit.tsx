@@ -10,13 +10,22 @@ function NotePage() {
 	useEffect(() => {
 		
 		connectSocket((data) => {
-			console.log("Got data");
-			console.log(data);
+			console.log("Received:", data);
+		/*
+			try {
+			
+				const recieved = JSON.parse(data);
+				
+
+			} catch {
+				console.log("Received:", data);
+			} 
+			*/
 		});
 		
 	}, [])
 	
-	const doSave = () => {
+	const doSaveServer = () => {
 		const noteName = title; 
 		const noteData = content; //these should be encrypted before sending
 		
@@ -33,6 +42,14 @@ function NotePage() {
 				data: noteData
 			}));
 		}
+	}
+	
+	const doSaveClient = () => {
+	
+	}
+	
+	const togglePin = () => {
+	
 	}
 	
 	const doCancel = () => {
@@ -71,12 +88,20 @@ function NotePage() {
 			Cancel
 			</button>
 			
-			<button onClick={doSave}>
-			Save
+			<button onClick={doSaveServer}>
+			Save to Server
+			</button>
+			
+			<button onClick={doSaveClient}>
+			Save to Client
+			</button>
+			
+			<button onClick={togglePin}>
+			Pin {/* Should Change to unpin if is pinned */}
 			</button>
 			
 			<button onClick={attachFile}>
-			Make File
+			Attach File {/* Should Change to unpin if is pinned */}
 			</button>
 			
 			<button onClick={doDelete}>

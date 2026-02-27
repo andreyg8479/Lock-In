@@ -1,10 +1,13 @@
 
 
 let socket : WebSocket | null = null;
+let currentListener: ((data: any) => void) | null = null;
 
 
 
 export function connectSocket(onMessage: (data: any) => void) {
+
+	currentListener = onMessage;
 
 	if (socket) return;
 
@@ -16,12 +19,18 @@ export function connectSocket(onMessage: (data: any) => void) {
 	};
 	
 	socket.onmessage = (event) => {
-		//for json i guess
+	
+		let data: any;
+		
+		//for JSON
 		try {
-			const data = JSON.parse(event.data);
-			onMessage(data);
+			data = JSON.parse(event.data);
 		} catch {
-			onMessage(event.data);
+			data = event.data;
+		}
+		
+		if (currentListener) {
+			currentListener(data);
 		}
 	};
 	
@@ -45,5 +54,17 @@ export function sendMessage(message: string) {
 	
 	socket.send(message);
 }
+
+
+export function checkSocket() {
+
+	if (!socket) {
+		return false;
+	}
 	
+	if (socket.readyState !== WebSocket.OPEN) {
+		return false;
+	}
 	
+	return true;
+}

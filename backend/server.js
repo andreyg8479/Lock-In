@@ -55,13 +55,29 @@ wss.on("connection", (socket) => {
   socket.on("message", (message) => {
 	
 	try {
-	const recieved = JSON.parse(event.data);
+	const recieved = JSON.parse(message.toString());
 	
 	switch (SM) { //handle the request based on the state
 		case State.STANDARD:
 			//code
 			
 			switch (recieved.command) { //STANDARD COMMANDS SWITCH
+				case "GetList":
+				
+					console.log("Sending List")
+					
+					//get list from database
+					
+					socket.send(JSON.stringify({
+						got: "List",
+						listSize: 3,
+						listNames: ["First", "Two", "3"],
+						listMod: [new Date(), new Date(), new Date()],
+						listMade: [new Date(), new Date(), new Date()],
+						listPinned: [false, false, false]
+					}));
+					
+				break;
 				case "Override":
 					//delete old note from database
 					//at users data at recieved.note_name store recieved.note_data
@@ -73,7 +89,7 @@ wss.on("connection", (socket) => {
 					}
 					
 					//update node last update time 
-				
+				break;
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
@@ -110,6 +126,10 @@ wss.on("connection", (socket) => {
 	
 	} catch { //just in case, also for debug maybe
 		console.log("Received:", message.toString());
+		if (message.toString() == "Test Message") {
+			console.log("Sending Back Test");
+			socket.send("Returning Test");
+		}
 	}
 	
   });

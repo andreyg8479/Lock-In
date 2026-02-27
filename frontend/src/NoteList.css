@@ -1,0 +1,72 @@
+
+html, body {
+	height: 100%;
+	margin: 1;	
+}
+
+.list-page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.top-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 30px 20px;
+	border: 1px solid;
+}
+
+.top-bar h1 {
+	margin: 0;
+	font-size: 40px;
+}
+
+
+.controls {
+	display: flex;
+	padding: 30px 20px;
+	gap: 10px;
+	border-bottom: 1px solid;
+}
+
+.controls input {
+	flex: 1;
+	padding: 8px;
+	border-radius: 5px;
+	border: 1px solid;
+}
+
+
+.list-container {
+	flex: 1;
+	padding: 20px;
+	overflow: hidden;
+	display: flex;
+}
+
+.list-box {
+	flex: 1;
+	border-radius: 8px;
+	padding: 15px;
+	overflow-y: auto;
+}
+
+.list-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px;
+	margin-bottom: 8px;
+	border-radius: 5px;
+	border: 1px solid;
+}
+
+.list-item .edit-button {
+	margin-left: 10px;
+	padding: 4px 8px;
+	cursor: pointer;
+}
+

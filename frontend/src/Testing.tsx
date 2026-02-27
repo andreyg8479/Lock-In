@@ -15,7 +15,7 @@ function Testing() {
 
   return (
 	<div>
-		<button onClick={() => sendMessage("Hello Server!")}>
+		<button onClick={() => sendMessage("Test Message")}>
 		Send Hello
       </button>
 	</div>

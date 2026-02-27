@@ -1,11 +1,12 @@
 
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom"; //this is for making things their own page
+import { BrowserRouter as Router, Routes, Route, Link  } from "react-router-dom"; //this is for making things their own page
 
 import { useEffect } from "react"; //useState can also be added here but idk if its needed
 import { connectSocket } from "./WebSocketConnect"; //can also add sendMessage
 import "./App.css";
 import Testing from "./Testing";
 import NoteEdit from "./NoteEdit";
+import NoteList from "./NoteList";
 import Login from "./Login";
 import SignUp from "./SignUp";
 
@@ -19,6 +20,7 @@ function PagesList() {
 				<h1>Debug Select Page Menu</h1>
 				<Link to="/Home">(Home)</Link>
 				<Link to="/NoteEdit"> (NoteEdit)   </Link>
+				<Link to="/NoteList"> (NoteList)   </Link>
 				<Link to="/SignUp">(SignUp)</Link>
 				<Link to="/Login"> (Login)   </Link>
 				<Link to="/testing">(Testing)</Link>
@@ -51,9 +53,11 @@ function App() {
 		connectSocket((data) => {
 			console.log("Got data");
 			console.log(data);
+			
 		});
 		
 	}, [])
+	
 
   return (
 	<Router>
@@ -63,6 +67,7 @@ function App() {
 			<Route path="/SignUp" element={<SignUp />} />
 			<Route path="/Login" element={<Login />} />
 			<Route path="/NoteEdit" element={<NoteEdit />} />
+			<Route path="/NoteList" element={<NoteList />} />
 			<Route path="/testing" element={<Testing />} />
 		</Routes>
 	</Router>
