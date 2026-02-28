@@ -4,8 +4,17 @@ const express = require("express");
 const path = require("path"); //for file paths
 const http = require("http"); // for http which I apparently need to connect to react
 
+// For database connection
+require('dotenv').config(); // Load environment variables from .env file
 
+// Database stuff
 
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 const WebSocket = require("ws");
 
@@ -149,12 +158,33 @@ server.listen(PORT, () => {
   console.log(`WebSocket running at ws://localhost:${PORT}`);
 });
 
+// somewhat temporary stuff, I think the better way will be to have a separate file for database functions
+// and then just import them and call them in the switch cases above, but for now this is fine
 
-function generateUnencryptedKey() {
-  const charCount = 32;
-  let key = "";
-  for (let i = 0; i < charCount; i++) {
-	  key = key + String.fromCharCode(Math.floor(Math.random() * 65536)); //gives random character
+app.post('/api/signup', async (req, res) => {
+  const {
+    username,
+    email,
+    saltB64,
+    iterations,
+    wrapIvB64,
+    wrappedMasterKeyB64
+  } = req.body;
+
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{
+      username,
+      email,
+      salt: saltB64,
+      iterations,
+      iv: wrapIvB64,
+      wrapped_master_key: wrappedMasterKeyB64
+    }]);
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
   }
-  return key;
-}
+
+  res.json({ ok: true });
+});
