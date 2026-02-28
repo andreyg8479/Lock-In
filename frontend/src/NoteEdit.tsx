@@ -1,29 +1,62 @@
 import { useEffect, useState } from 'react'
 import { connectSocket, sendMessage } from "./WebSocketConnect";
+import { useLocation } from "react-router-dom";
 import './NoteEdit.css'
 
-function NotePage() {
+function noteEdit() {
 	
-	const [title, setTitle] = useState("Untitled Document");
+	//for getting the note name if we come here from list
+	const location = useLocation();
+	const ogNoteName = location.state?.noteName;
+	
+	const [pinned, setPinned] = useState(false);
+	
+	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
 	const [content, setContent] = useState("");
   
 	useEffect(() => {
+	
+		//clear the location state stuff
+		if (window.history.replaceState) {
+		  window.history.replaceState({}, document.title);
+		}
 		
 		connectSocket((data) => {
-			console.log("Received:", data);
-		/*
-			try {
-			
-				const recieved = JSON.parse(data);
+			if (typeof data === "object") {	
+					
+				if (data.got === "NoteForEdit") {
 				
-
-			} catch {
+					setContent(data.noteData);
+					
+					setPinned(data.pinned);
+					
+				}
+				
+			} else {			
 				console.log("Received:", data);
-			} 
-			*/
+			}
 		});
 		
+		if (!ogNoteName) {
+			console.log("no note selected, want to make new note")
+		} else { //load the new note
+		
+			if (true) { //if its a server note
+			
+				console.log("Requesting Note");
+			
+				sendMessage(JSON.stringify({
+					command: "GetNote",
+					noteName: ogNoteName
+				}));
+			
+			} // else if its a client note
+		
+		}
+		
 	}, [])
+	
+
 	
 	const doSaveServer = () => {
 		const noteName = title; 
@@ -49,7 +82,7 @@ function NotePage() {
 	}
 	
 	const togglePin = () => {
-	
+		setPinned(!pinned);
 	}
 	
 	const doCancel = () => {
@@ -97,7 +130,7 @@ function NotePage() {
 			</button>
 			
 			<button onClick={togglePin}>
-			Pin {/* Should Change to unpin if is pinned */}
+			{pinned ? "Unpin" : "Pin"}
 			</button>
 			
 			<button onClick={attachFile}>
@@ -125,4 +158,4 @@ function NotePage() {
   )
 }
 
-export default NotePage;
+export default noteEdit;

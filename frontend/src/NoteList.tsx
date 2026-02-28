@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
+import { useNavigate } from "react-router-dom";
 import { connectSocket, sendMessage, checkSocket } from "./WebSocketConnect";
 import './NoteList.css'
-
 
 type Note = {
 	name: string;
@@ -12,6 +12,8 @@ type Note = {
 };
 
 function NotePage() {
+
+	const navigate = useNavigate();
   
 	useEffect(() => {
 		
@@ -54,6 +56,66 @@ function NotePage() {
 		
 		
 	}, [])
+	
+	function loadList() {
+
+		const noteList: Note[] = [];
+		
+		//Get list from server
+		if (checkSocket()) {
+			sendMessage(JSON.stringify({
+				command: "GetList"
+			}));
+		} else {
+			loadListAfterServer(noteList);
+		}
+	  
+	}
+
+	function loadListAfterServer(notes: any[]) {
+	  
+		//add notes from client
+	  
+		//ADD SORTING HERE
+	  
+		//move pins to top
+	  
+		//add them to the items
+		
+		addNotesToList(notes);
+
+	}
+
+	function addNotesToList(notes: any[]) {
+	  
+		const listBox = document.getElementById("noteList");
+		if (!listBox) return;
+		
+		listBox.innerHTML = "";
+		
+		for (const note of notes) {
+			const item = document.createElement("div");
+			item.className = "list-item";
+			
+			const name = document.createElement("span");
+			name.textContent = note.name;
+			item.appendChild(name);
+			
+			const editButton = document.createElement("button");
+			editButton.textContent = "🖉";
+			editButton.className = "edit-button";
+			
+			editButton.addEventListener("click", () => {
+			
+				navigate("/NoteEdit", { state: { noteName: note.name, client: note.client } });
+			
+			});
+			
+			item.appendChild(editButton);
+			
+			listBox.appendChild(item);
+		}
+	}
 
   return (
 	<div className="list-page">
@@ -86,62 +148,3 @@ function NotePage() {
 
 export default NotePage;
 
-function loadList() {
-
-	const noteList: Note[] = [];
-	
-	//Get list from server
-	if (checkSocket()) {
-	    sendMessage(JSON.stringify({
-			command: "GetList"
-		}));
-	} else {
-		loadListAfterServer(noteList);
-	}
-  
-}
-
-function loadListAfterServer(notes: any[]) {
-  
-	//add notes from client
-  
-	//ADD SORTING HERE
-  
-	//move pins to top
-  
-	//add them to the items
-	
-	addNotesToList(notes);
-
-}
-
-function addNotesToList(notes: any[]) {
-  
-	const listBox = document.getElementById("noteList");
-	if (!listBox) return;
-	
-	listBox.innerHTML = "";
-	
-	for (const note of notes) {
-		const item = document.createElement("div");
-		item.className = "list-item";
-		
-		const name = document.createElement("span");
-		name.textContent = note.name;
-		item.appendChild(name);
-		
-		const editButton = document.createElement("button");
-		editButton.textContent = "🖉";
-		editButton.className = "edit-button";
-		
-		editButton.addEventListener("click", () => {
-		
-			console.log("Editing note: ", note.name);
-		
-		});
-		
-		item.appendChild(editButton);
-		
-		listBox.appendChild(item);
-	}
-}

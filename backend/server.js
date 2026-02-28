@@ -78,6 +78,19 @@ wss.on("connection", (socket) => {
 					}));
 					
 				break;
+				case "GetNote":
+				
+					console.log("Sending Note")
+					
+					//get note from database
+					
+					socket.send(JSON.stringify({
+						got: "NoteForEdit",
+						noteData: "This note is awesome! Or at least, I think so...",
+						pinned: true
+					}));
+					
+				break;
 				case "Override":
 					//delete old note from database
 					//at users data at recieved.note_name store recieved.note_data
