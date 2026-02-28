@@ -23,47 +23,15 @@ const PORT = process.env.PORT || 8080;
 
 // react stuff
 const app = express();
-app.use(express.json());
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "..", "frontend", "dist");
 console.log("Serving frontend from:", frontendPath);
 
 app.use(express.static(frontendPath));
 
-// API routes must be before the catch-all fallback
-app.post("/api/signup", async (req, res) => {
-  const {
-    username,
-    email,
-    saltB64,
-    iterations,
-    wrapIvB64,
-    wrappedMasterKeyB64,
-  } = req.body;
-
-  const { data, error } = await supabase
-    .from("users")
-    .insert([
-      {
-        username,
-        email,
-        salt: saltB64,
-        iterations,
-        iv: wrapIvB64,
-        wrapped_master_key: wrappedMasterKeyB64,
-      },
-    ]);
-
-  if (error) {
-    return res.status(400).json({ error: error.message });
-  }
-
-  res.json({ ok: true });
-});
-
-// Fallback: serve index.html for SPA routing (must be last)
+//this is some kind of backup router
 app.use((req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"), (err) => {
+  res.sendFile(path.join(frontendPath, "index.html"), err => {
     if (err) console.error("Error sending file:", err);
   });
 });
@@ -185,11 +153,38 @@ wss.on("connection", (socket) => {
 
 
 
-if (process.env.NODE_ENV !== "test") {
-  server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-    console.log(`WebSocket running at ws://localhost:${PORT}`);
-  });
-}
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`WebSocket running at ws://localhost:${PORT}`);
+});
 
-module.exports = { app, server };
+// somewhat temporary stuff, I think the better way will be to have a separate file for database functions
+// and then just import them and call them in the switch cases above, but for now this is fine
+
+app.post('/api/signup', async (req, res) => {
+  const {
+    username,
+    email,
+    saltB64,
+    iterations,
+    wrapIvB64,
+    wrappedMasterKeyB64
+  } = req.body;
+
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{
+      username,
+      email,
+      salt: saltB64,
+      iterations,
+      iv: wrapIvB64,
+      wrapped_master_key: wrappedMasterKeyB64
+    }]);
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.json({ ok: true });
+});
