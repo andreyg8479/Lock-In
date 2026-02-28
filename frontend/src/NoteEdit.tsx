@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { connectSocket, sendMessage } from "./WebSocketConnect";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import './NoteEdit.css'
 
 function noteEdit() {
+
+	const navigate = useNavigate();
 	
 	//for getting the note name if we come here from list
 	const location = useLocation();
@@ -62,16 +64,19 @@ function noteEdit() {
 		const noteName = title; 
 		const noteData = content; //these should be encrypted before sending
 		
-		if (true) { //if its a newly made note vs editing old note
+		if (!ogNoteName) { //if its a newly made note vs editing old note
 			sendMessage(JSON.stringify({
 				command: "NewNote",
 				name: noteName,
+				pinned: pinned,
 				data: noteData
 			}));
 		} else {
 			sendMessage(JSON.stringify({
 				command: "Override",
-				name: noteName,
+				name: ogNoteName,
+				newName: noteName,
+				pinned: pinned,
 				data: noteData
 			}));
 		}
@@ -86,7 +91,7 @@ function noteEdit() {
 	}
 	
 	const doCancel = () => {
-		//just go back to the list page
+		navigate("/NoteList");
 	}
 	
 	const attachFile = () => {
@@ -99,7 +104,7 @@ function noteEdit() {
 			//also make sure the name changing is accounted for
 			sendMessage(JSON.stringify({
 				command: "DeleteNote",
-				name: noteName
+				name: ogNoteName
 			}));
 		}
 		doCancel();
