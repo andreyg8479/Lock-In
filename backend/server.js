@@ -57,6 +57,10 @@ wss.on("connection", (socket) => {
   socket.send("Hello Client");
   
   let SM = State.STANDARD; //State Machine
+  let reason = "None"
+  
+  
+  let user;
   
   //socket.send(); //use this to send stuff to the client
   
@@ -112,6 +116,41 @@ wss.on("connection", (socket) => {
 					
 					//update node last update time 
 				break;
+				case "SignUp":
+					
+					username = recieved.username;
+					
+					if (false) { //if the username already exists in database TODO
+						socket.send(JSON.stringify({
+							got: "SignUpReturn",
+							result: "Error: Username already taken"
+						}))
+					}
+					
+					//desginate username in backend TODO
+					
+					//Now we have to set up the key
+					const unencKey = generateUnencryptedKey()
+					
+					socket.send(JSON.stringify({
+						got: "SignUpReturn",
+						result: "Key Setup Request",
+						key: unencKey
+					})););
+					
+					//Store the unencKey in the Database TODO
+					
+					SM = STATE.KEY_SETUP;
+					
+					//were done here, just need the key to be sent back
+					
+				break;
+				case "LogIn":
+					
+					username = recieved.username;
+					
+					
+				break;
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
@@ -123,22 +162,13 @@ wss.on("connection", (socket) => {
 		case State.KEY_SETUP:
 			//Client Has Asked to setup key verification
 			
-
-			/* We sent this to the client last, should put this wherever that is
-			
-			const unencKey = generateUnencryptedKey()
-			socket.send(JSON.stringify({
-				key: unencKey
-			})););
-			//Store unencKey in the database
-			
-			*/
-			
 			//expecting the encrypted version back
 			let encKey = recieved.key;
 			
-			//Store encKey in the database
+			//Store encKey in the database TODO
 			
+			
+			SM = STATE.STANDARD;
 			
 			break; //End of KEY_SETUP
 		default:
