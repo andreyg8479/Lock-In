@@ -5,7 +5,7 @@ const path = require("path"); //for file paths
 const http = require("http"); // for http which I apparently need to connect to react
 
 // For database connection
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config({ path: path.join(__dirname, 'db.env') }); // Load environment variables from .env file
 
 // Database stuff
 
@@ -57,11 +57,15 @@ wss.on("connection", (socket) => {
   socket.send("Hello Client");
   
   let SM = State.STANDARD; //State Machine
+  let reason = "None"
+  
+  
+  let user;
   
   //socket.send(); //use this to send stuff to the client
   
   //This runs when this client sends a message (CURRENTLY STRINGS)
-  socket.on("message", (message) => {
+  socket.on("message", async (message) => {
 	
 	try {
 	const recieved = JSON.parse(message.toString());
@@ -100,6 +104,30 @@ wss.on("connection", (socket) => {
 					}));
 					
 				break;
+
+				case "NewNote":
+					const { data, error } = await supabase.from('notes').insert([{ 
+						note_title: recieved.name, 
+						note_text: recieved.data, 
+						pinned: recieved.pinned, 
+						date: new Date().toISOString() }]);
+
+					if (error) {
+
+						socket.send(JSON.stringify({
+							got: "NewNote",
+							result: "Error: " + error.message
+						  }));
+						  return;
+					}
+
+					socket.send(JSON.stringify({
+						got: "NewNote",
+						result: "Note Created",
+
+					}));
+
+				break;
 				case "Override":
 					//delete old note from database
 					//at users data at recieved.note_name store recieved.note_data
@@ -112,6 +140,41 @@ wss.on("connection", (socket) => {
 					
 					//update node last update time 
 				break;
+				case "SignUp":
+					
+					username = recieved.username;
+					
+					if (false) { //if the username already exists in database TODO
+						socket.send(JSON.stringify({
+							got: "SignUpReturn",
+							result: "Error: Username already taken"
+						}))
+					}
+					
+					//desginate username in backend TODO
+					
+					//Now we have to set up the key
+					const unencKey = generateUnencryptedKey()
+					
+					socket.send(JSON.stringify({
+						got: "SignUpReturn",
+						result: "Key Setup Request",
+						key: unencKey
+					})););
+					
+					//Store the unencKey in the Database TODO
+					
+					SM = STATE.KEY_SETUP;
+					
+					//were done here, just need the key to be sent back
+					
+				break;
+				case "LogIn":
+					
+					username = recieved.username;
+					
+					
+				break;
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
@@ -123,22 +186,13 @@ wss.on("connection", (socket) => {
 		case State.KEY_SETUP:
 			//Client Has Asked to setup key verification
 			
-
-			/* We sent this to the client last, should put this wherever that is
-			
-			const unencKey = generateUnencryptedKey()
-			socket.send(JSON.stringify({
-				key: unencKey
-			})););
-			//Store unencKey in the database
-			
-			*/
-			
 			//expecting the encrypted version back
 			let encKey = recieved.key;
 			
-			//Store encKey in the database
+			//Store encKey in the database TODO
 			
+			
+			SM = STATE.STANDARD;
 			
 			break; //End of KEY_SETUP
 		default:
@@ -174,28 +228,7 @@ server.listen(PORT, () => {
 // somewhat temporary stuff, I think the better way will be to have a separate file for database functions
 // and then just import them and call them in the switch cases above, but for now this is fine
 
-function validateSignupBody(body) {
-  const { username, email, saltB64, iterations, wrapIvB64, wrappedMasterKeyB64 } = body ?? {};
-  if (!username || typeof username !== "string" || !username.trim())
-    return { ok: false, error: "Username is required" };
-  if (!email || typeof email !== "string" || !email.trim())
-    return { ok: false, error: "Email is required" };
-  if (!saltB64 || typeof saltB64 !== "string")
-    return { ok: false, error: "saltB64 is required" };
-  const iter = Number(iterations);
-  if (!Number.isInteger(iter) || iter < 100000)
-    return { ok: false, error: "iterations must be a valid integer (at least 100000)" };
-  if (!wrapIvB64 || typeof wrapIvB64 !== "string")
-    return { ok: false, error: "wrapIvB64 is required" };
-  if (!wrappedMasterKeyB64 || typeof wrappedMasterKeyB64 !== "string")
-    return { ok: false, error: "wrappedMasterKeyB64 is required" };
-  return { ok: true };
-}
-
 app.post('/api/signup', async (req, res) => {
-  const validation = validateSignupBody(req.body);
-  if (!validation.ok) return res.status(400).json({ error: validation.error });
-
   const {
     username,
     email,
@@ -222,3 +255,21 @@ app.post('/api/signup', async (req, res) => {
 
   res.json({ ok: true });
 });
+
+app.post('/api/delete', async (req, res) => {
+
+	const { username } = req.body;
+	
+	const { data, error } = await supabase
+	.from('users')
+	.delete()
+	.eq('username', username); 
+
+	if (error) {
+		return res.status(400).json({ error: error.message });
+	  }
+	
+	res.json({ ok: true });
+
+});
+
