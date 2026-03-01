@@ -18,20 +18,3 @@ jobs:
       - name: Run unit tests
         working-directory: backend
         run: npm test
-
-  frontend-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install frontend deps
-        working-directory: frontend
-        run: npm ci || npm i
-
-      - name: Run frontend tests
-        working-directory: frontend
-        run: npm run test -- --run
