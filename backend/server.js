@@ -88,6 +88,23 @@ app.use((req, res) => {
   });
 });
 
+app.post('/api/delete', async (req, res) => {
+
+	const { username } = req.body;
+	
+	const { data, error } = await supabase
+	.from('users')
+	.delete()
+	.eq('username', username); 
+
+	if (error) {
+		return res.status(400).json({ error: error.message });
+	  }
+	
+	res.json({ ok: true });
+
+});
+
 // this creates an http server
 const server = http.createServer(app);
 
@@ -113,7 +130,7 @@ wss.on("connection", (socket) => {
   //socket.send(); //use this to send stuff to the client
   
   //This runs when this client sends a message (CURRENTLY STRINGS)
-  socket.on("message", (message) => {
+  socket.on("message", async (message) => {
 	
 	try {
 	const recieved = JSON.parse(message.toString());
@@ -164,6 +181,27 @@ wss.on("connection", (socket) => {
 					
 					//update node last update time 
 				break;
+                case "NewNote":
+					const { data, error } = await supabase.from('notes').insert([{ 
+						note_title: recieved.name, 
+						note_text: recieved.data, 
+						pinned: recieved.pinned, 
+						date: new Date().toISOString() }]);
+
+					if (error) {
+
+						socket.send(JSON.stringify({
+							got: "NewNote",
+							result: "Error: " + error.message
+						  }));
+						  return;
+					}
+
+					socket.send(JSON.stringify({
+						got: "NewNote",
+						result: "Note Created",
+
+					}));
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
