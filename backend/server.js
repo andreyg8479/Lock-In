@@ -65,7 +65,7 @@ wss.on("connection", (socket) => {
   //socket.send(); //use this to send stuff to the client
   
   //This runs when this client sends a message (CURRENTLY STRINGS)
-  socket.on("message", (message) => {
+  socket.on("message", async (message) => {
 	
 	try {
 	const recieved = JSON.parse(message.toString());
@@ -103,6 +103,30 @@ wss.on("connection", (socket) => {
 						pinned: true
 					}));
 					
+				break;
+
+				case "NewNote":
+					const { data, error } = await supabase.from('notes').insert([{ 
+						note_title: recieved.name, 
+						note_text: recieved.data, 
+						pinned: recieved.pinned, 
+						date: new Date().toISOString() }]);
+
+					if (error) {
+
+						socket.send(JSON.stringify({
+							got: "NewNote",
+							result: "Error: " + error.message
+						  }));
+						  return;
+					}
+
+					socket.send(JSON.stringify({
+						got: "NewNote",
+						result: "Note Created",
+
+					}));
+
 				break;
 				case "Override":
 					//delete old note from database
@@ -248,3 +272,4 @@ app.post('/api/delete', async (req, res) => {
 	res.json({ ok: true });
 
 });
+
