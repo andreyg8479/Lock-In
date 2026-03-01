@@ -18,22 +18,24 @@ if (!url || !key) {
 
 const supabase = createClient(url, key);
 
-// const express = require("express");
-// const path = require("path"); //for file paths
-// const http = require("http"); // for http which I apparently need to connect to react
-
-// For database connection
-// require('dotenv').config();
-// const { createClient } = require('@supabase/supabase-js');
-
-// This is old websocket logic for REALTIME / Live sync features with the client
-// We need to switch to a RESTful framework for the server-client API.
-
-// const WebSocket = require("ws");
+// Note: This WS stuff is legacy code because we switched to a RESTful API
 const PORT = process.env.PORT || 8080;
 
-// react stuff
+import { handleSignup, handleLogin } from "./controllers/AuthController";
+import { getFileNames, getFile, uploadFile, deleteFile, updateFile } from "./controllers/VaultController";
+
+// RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
 const app = express();
+app.use(express.json())
+
+app.post("/api/auth/signup", handleSignup);
+app.post("/api/auth/login", handleLogin);
+
+app.get("/api/vault/fileNames", getFileNames);
+app.get("/api/vault/file", getFile);
+app.post("/api/vault/file", uploadFile);
+app.delete("/api/vault/file", deleteFile);
+app.put("/api/vault/file", updateFile);
 
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");
@@ -59,15 +61,6 @@ enum State {
 	VERIFYING = "VERIFYING",
 	KEY_SETUP = "KEY_SETUP"
 }
-
-/* const State = Object.freeze({ //this can be replaced with an actual enum if we switch to typescript
-  STANDARD: 'STANDARD', //for most requests (create note, fetch names, ect)
-  VERIFYING: 'VERIFYING', //When verifying password
-  KEY_SETUP: 'KEY_SETUP', //For setting up verification key
-});
-
-type StateType = "STANDARD" | "VERIFYING" | "KEY_SETUP";
-let SM: StateType = "STANDARD"; */
 
 //Runs when a browser connects, basicly this is any individual client
 wss.on("connection", (socket) => {
