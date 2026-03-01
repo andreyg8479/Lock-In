@@ -174,6 +174,14 @@ async function deriveAesGcmKeyFromPassword(password: string, salt: Uint8Array, i
     );
 }
 
+/*
+    TODO:
+    1) Function for uploading and encrypting a file
+    2) Function for decrypting a recieved file
+    3) Function for decrypting the users' filenames
+
+*/
+
 /*  Generate cryptographically-secure random bytes
     For use in generating salts and IVs
 */
