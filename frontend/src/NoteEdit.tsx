@@ -99,7 +99,6 @@ function noteEdit() {
 	}
 	
 	const doDelete = () => {
-		const noteName = title; 
 		if (true) { //if its a note thats been saved before
 			//also make sure the name changing is accounted for
 			sendMessage(JSON.stringify({

@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import { connectSocket, sendMessage, checkSocket } from "./WebSocketConnect";
+import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
 import './NoteList.css'
 
 type Note = {
@@ -14,6 +15,7 @@ type Note = {
 function NotePage() {
 
 	const navigate = useNavigate();
+	const [sortBy, setSortBy] = useState<SortOption>('byName');
   
 	useEffect(() => {
 		
@@ -67,26 +69,19 @@ function NotePage() {
 				command: "GetList"
 			}));
 		} else {
+			// TODO: Code doesn't reach here, you might know why
+
 			loadListAfterServer(noteList);
 		}
 	  
 	}
 
-	function loadListAfterServer(notes: any[]) {
-	  
-		//add notes from client
-	  
-		//ADD SORTING HERE
-	  
-		//move pins to top
-	  
-		//add them to the items
-		
-		addNotesToList(notes);
-
+	function loadListAfterServer(notes: NoteForSort[]) {
+		const sorted = sortNotes(notes, sortBy);
+		addNotesToList(sorted);
 	}
 
-	function addNotesToList(notes: any[]) {
+	function addNotesToList(notes: NoteForSort[]) {
 	  
 		const listBox = document.getElementById("noteList");
 		if (!listBox) return;
@@ -129,7 +124,10 @@ function NotePage() {
 	
 		<div className="controls">
 			<input type="text" placeholder="Search..."/>
-			<select>
+			<select
+				value={sortBy}
+				onChange={(e) => setSortBy(e.target.value as SortOption)}
+			>
 				<option value="byName">By Name</option>
 				<option value="byModified">By Modified</option>
 				<option value="byCreated">By Created</option>

@@ -5,7 +5,7 @@ const path = require("path"); //for file paths
 const http = require("http"); // for http which I apparently need to connect to react
 
 // For database connection
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config({ path: path.resolve(__dirname, '..', 'db.env') });
 
 // Database stuff
 
