@@ -1,30 +1,42 @@
+// server.ts
+import express from "express"
+import path from "path"
+import http from "http"
+import dotenv from "dotenv"
+import { WebSocketServer, WebSocket } from "ws";
+import { createClient } from "@supabase/supabase-js" 
 
+// For Supabase connection
+dotenv.config();
+const url = process.env.SUPABASE_URL;
+const key = process.env.SUPABASE_KEY;
 
-const express = require("express");
-const path = require("path"); //for file paths
-const http = require("http"); // for http which I apparently need to connect to react
+// Check if environment variables are set
+if (!url || !key) {
+	throw new Error("SUPABASE_URL and SUPABASE_KEY must be set in environment variables");
+}
+
+const supabase = createClient(url, key);
+
+// const express = require("express");
+// const path = require("path"); //for file paths
+// const http = require("http"); // for http which I apparently need to connect to react
 
 // For database connection
-require('dotenv').config(); // Load environment variables from .env file
+// require('dotenv').config();
+// const { createClient } = require('@supabase/supabase-js');
 
-// Database stuff
+// This is old websocket logic for REALTIME / Live sync features with the client
+// We need to switch to a RESTful framework for the server-client API.
 
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
-
-const WebSocket = require("ws");
-
+// const WebSocket = require("ws");
 const PORT = process.env.PORT || 8080;
-
 
 // react stuff
 const app = express();
+
 // this is to serve the react front end
-const frontendPath = path.resolve(__dirname, "..", "frontend", "dist");
+const frontendPath = path.resolve(__dirname, "../../frontend/dist");
 console.log("Serving frontend from:", frontendPath);
 
 app.use(express.static(frontendPath));
@@ -38,25 +50,35 @@ app.use((req, res) => {
 
 // this creates an http server
 const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
 
+// this is boilerplate to get the current SM stuff to work with typescript
+// but ideally this gets phased about by the REST API
+enum State {
+	STANDARD = "STANDARD",
+	VERIFYING = "VERIFYING",
+	KEY_SETUP = "KEY_SETUP"
+}
 
-const wss = new WebSocket.Server({ server });
-
-
-const State = Object.freeze({ //this can be replaced with an actual enum if we switch to typescript
+/* const State = Object.freeze({ //this can be replaced with an actual enum if we switch to typescript
   STANDARD: 'STANDARD', //for most requests (create note, fetch names, ect)
   VERIFYING: 'VERIFYING', //When verifying password
   KEY_SETUP: 'KEY_SETUP', //For setting up verification key
 });
 
+type StateType = "STANDARD" | "VERIFYING" | "KEY_SETUP";
+let SM: StateType = "STANDARD"; */
 
 //Runs when a browser connects, basicly this is any individual client
 wss.on("connection", (socket) => {
   console.log("Client connected");
   
   socket.send("Hello Client");
-  
-  let SM = State.STANDARD; //State Machine
+
+  // let SM = State.STANDARD; //State Machine
+  const state = {
+	SM: State.STANDARD as State
+  };
   
   //socket.send(); //use this to send stuff to the client
   
@@ -66,7 +88,7 @@ wss.on("connection", (socket) => {
 	try {
 	const recieved = JSON.parse(message.toString());
 	
-	switch (SM) { //handle the request based on the state
+	switch (state.SM) { //handle the request based on the state
 		case State.STANDARD:
 			//code
 			
