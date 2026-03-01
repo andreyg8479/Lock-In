@@ -1,21 +1,21 @@
 import { Request, Response } from "express";
 
-export function getFileNames() {
+export async function getFileNames(req: Request, res: Response) {
 
 }
 
-export function getFile() {
+export async function getFile(req: Request, res: Response) {
     
 }
 
-export function uploadFile() {
+export async function uploadFile(req: Request, res: Response) {
     
 }
 
-export function updateFile() {
+export async function updateFile(req: Request, res: Response) {
     
 }
 
-export function deleteFile() {
+export async function deleteFile(req: Request, res: Response) {
     
 }
