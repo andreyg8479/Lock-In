@@ -135,7 +135,7 @@ wss.on("connection", (socket) => {
 						listNames: ["First", "Two", "3"],
 						listMod: [new Date(), new Date(), new Date()],
 						listMade: [new Date(), new Date(), new Date()],
-						listPinned: [true, false, false]
+						listPinned: [false, false, false]
 					}));
 					
 				break;

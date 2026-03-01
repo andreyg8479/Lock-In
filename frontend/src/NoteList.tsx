@@ -77,16 +77,7 @@ function NotePage() {
 	}
 
 	function loadListAfterServer(notes: NoteForSort[]) {
-
-
-		//add notes from client to the list
-
-		const sorted = [...notes];
-
-		// moves pins to top TODO: add sorting functionality
-		sorted.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-
-
+		const sorted = sortNotes(notes, sortBy);
 		addNotesToList(sorted);
 	}
 
