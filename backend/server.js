@@ -5,7 +5,7 @@ const path = require("path"); //for file paths
 const http = require("http"); // for http which I apparently need to connect to react
 
 // For database connection
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config({ path: path.join(__dirname, 'db.env') }); // Load environment variables from .env file
 
 // Database stuff
 
@@ -230,4 +230,21 @@ app.post('/api/signup', async (req, res) => {
   }
 
   res.json({ ok: true });
+});
+
+app.post('/api/delete', async (req, res) => {
+
+	const { username } = req.body;
+	
+	const { data, error } = await supabase
+	.from('users')
+	.delete()
+	.eq('username', username); 
+
+	if (error) {
+		return res.status(400).json({ error: error.message });
+	  }
+	
+	res.json({ ok: true });
+
 });
