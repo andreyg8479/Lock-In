@@ -23,3 +23,15 @@ async function request(method: string, path: string, body?: any) {
 
     return response.json();
 }
+
+export async function requestSignup(payload: any) {
+    return request("POST", "/api/auth/signup", payload);
+}
+
+export async function getFileNames() {
+    return request("GET", "/api/vault/fileNames");
+}
+
+export async function getFile(id: string) {
+    return request("GET", `/api/vault/file/${id}`);
+}

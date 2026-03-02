@@ -65,7 +65,7 @@ const SALT_LEN = 16; // bytes
 const IV_LEN = 12; // bytes (96 bits) for AES-GCM
 const MASTER_KEY_LEN = 32; // bytes for AES-256 (256 bits)
 
-export async function handleSignup(data: IncomingSignupData): Promise<OutgoingSignupData> {
+export async function generateSignupCredentials(data: IncomingSignupData): Promise<OutgoingSignupData> {
 
     try {
 

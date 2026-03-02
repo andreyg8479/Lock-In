@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./SignUp.css";
 
+import type { IncomingSignupData, IncomingLoginData, OutgoingSignupData } from "./crypto/lockinCrypto";
+import { generateSignupCredentials } from "./crypto/lockinCrypto.ts";
+import { requestSignup } from "./api.ts";
+
 const SignUp: React.FC = () => {
 	const navigate = useNavigate();
 	const [name, setName] = useState("");
@@ -9,16 +13,37 @@ const SignUp: React.FC = () => {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 
-	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		// Simple client-side check – replace with real backend call later
-		if (password !== confirmPassword) {
-			alert("Passwords do not match.");
-			return;
-		}
+		
+		try {
 
-		console.log("Signing up with:", { name, email, password });
-		navigate("/noteEdit");
+			// Format the GUI element entries as type IncomingSignupData
+			const signupInput: IncomingSignupData = {
+				username: name,
+				email,
+				password
+			};
+
+			// Step 1: Generate crypto metadata
+			const cryptoResult: OutgoingSignupData = await generateSignupCredentials(signupInput);
+
+			// "Discriminated Union Narrowing"
+			if (!cryptoResult.ok) {
+				alert(cryptoResult.payload.errorMessage);
+				return;
+			}
+
+			// Step 2: Send HTTP request to server
+			await SignUp(cryptoResult.payload);
+
+			// Step 3: Navigate to noteEdit page
+			console.log("Signing up with:", { name, email, password });
+			navigate("/noteEdit");
+
+		} catch (e) {
+			console.log("Error in generating artifacts -- this probably means web crypto api failed.");
+		}
 	};
 
 	return (
