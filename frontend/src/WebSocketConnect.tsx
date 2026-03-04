@@ -7,6 +7,7 @@ let currentListener: ((data: any) => void) | null = null;
 
 export function connectSocket(onMessage: (data: any) => void) {
 
+
 	currentListener = onMessage;
 
 	if (socket) return;

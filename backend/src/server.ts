@@ -49,11 +49,80 @@ console.log("Serving frontend from:", frontendPath);
 
 app.use(express.static(frontendPath));
 
+// API routes (must be before catch-all so they are reachable)
+app.use(express.json());
+
+function validateSignupBody(body) {
+  const { username, email, saltB64, iterations, wrapIvB64, wrappedMasterKeyB64 } = body ?? {};
+  if (!username || typeof username !== "string" || !username.trim())
+    return { ok: false, error: "Username is required" };
+  if (!email || typeof email !== "string" || !email.trim())
+    return { ok: false, error: "Email is required" };
+  if (!saltB64 || typeof saltB64 !== "string")
+    return { ok: false, error: "saltB64 is required" };
+  const iter = Number(iterations);
+  if (!Number.isInteger(iter) || iter < 100000)
+    return { ok: false, error: "iterations must be a valid integer (at least 100000)" };
+  if (!wrapIvB64 || typeof wrapIvB64 !== "string")
+    return { ok: false, error: "wrapIvB64 is required" };
+  if (!wrappedMasterKeyB64 || typeof wrappedMasterKeyB64 !== "string")
+    return { ok: false, error: "wrappedMasterKeyB64 is required" };
+  return { ok: true };
+}
+
+app.post('/api/signup', async (req, res) => {
+  const validation = validateSignupBody(req.body);
+  if (!validation.ok) return res.status(400).json({ error: validation.error });
+
+  const {
+    username,
+    email,
+    saltB64,
+    iterations,
+    wrapIvB64,
+    wrappedMasterKeyB64
+  } = req.body;
+
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{
+      username,
+      email,
+      salt: saltB64,
+      iterations,
+      iv: wrapIvB64,
+      wrapped_master_key: wrappedMasterKeyB64
+    }]);
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.json({ ok: true });
+});
+
 //this is some kind of backup router
 app.use((req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"), err => {
     if (err) console.error("Error sending file:", err);
   });
+});
+
+app.post('/api/delete', async (req, res) => {
+
+	const { username } = req.body;
+	
+	const { data, error } = await supabase
+	.from('users')
+	.delete()
+	.eq('username', username); 
+
+	if (error) {
+		return res.status(400).json({ error: error.message });
+	  }
+	
+	res.json({ ok: true });
+
 });
 
 // this creates an http server
@@ -82,7 +151,7 @@ wss.on("connection", (socket) => {
   //socket.send(); //use this to send stuff to the client
   
   //This runs when this client sends a message (CURRENTLY STRINGS)
-  socket.on("message", (message) => {
+  socket.on("message", async (message) => {
 	
 	try {
 	const recieved = JSON.parse(message.toString());
@@ -108,6 +177,47 @@ wss.on("connection", (socket) => {
 					}));
 					
 				break;
+				case "GetNote":
+				
+					
+					
+					//get note from database
+					const { data: notes, error: noteError } = await supabase
+                           .from('notes')
+                           .select('*')                // get all columns in the row
+                           .eq('note_title', recieved.noteName)
+                           .order('date', { ascending: false })
+                                                       
+					if (noteError) {
+						socket.send(JSON.stringify({
+							got: "NoteForEdit",
+							result: "Error: " + noteError.message
+						}));
+						return;
+					}
+
+					if (!notes || notes.length === 0) {
+						// no rows returned
+						socket.send(JSON.stringify({
+						  got: "NoteForEdit",
+						  result: "No note found with that title",
+						}));
+						break; // or return
+					  }
+					  
+					  const note = notes[0];
+					  // use note.note_text, note.pinned, etc.
+					
+					socket.send(JSON.stringify({
+						got: "NoteForEdit",
+						noteData: note.note_text,
+						pinned: note.pinned,
+						noteName: note.note_title,
+						date: note.date
+
+					}));
+					
+				break;
 				case "Override":
 					//delete old note from database
 					//at users data at recieved.note_name store recieved.note_data
@@ -120,6 +230,27 @@ wss.on("connection", (socket) => {
 					
 					//update node last update time 
 				break;
+                case "NewNote":
+					const { data, error } = await supabase.from('notes').insert([{ 
+						note_title: recieved.name, 
+						note_text: recieved.data, 
+						pinned: recieved.pinned, 
+						date: new Date().toISOString() }]);
+
+					if (error) {
+
+						socket.send(JSON.stringify({
+							got: "NewNote",
+							result: "Error: " + error.message
+						  }));
+						  return;
+					}
+
+					socket.send(JSON.stringify({
+						got: "NewNote",
+						result: "Note Created",
+
+					}));
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
@@ -130,17 +261,6 @@ wss.on("connection", (socket) => {
 			break;
 		case State.KEY_SETUP:
 			//Client Has Asked to setup key verification
-			
-
-			/* We sent this to the client last, should put this wherever that is
-			
-			const unencKey = generateUnencryptedKey()
-			socket.send(JSON.stringify({
-				key: unencKey
-			})););
-			//Store unencKey in the database
-			
-			*/
 			
 			//expecting the encrypted version back
 			let encKey = recieved.key;
@@ -171,41 +291,3 @@ wss.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
-
-
-
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`WebSocket running at ws://localhost:${PORT}`);
-});
-
-/* somewhat temporary stuff, I think the better way will be to have a separate file for database functions
-// and then just import them and call them in the switch cases above, but for now this is fine
-
-app.post('/api/signup', async (req, res) => {
-  const {
-    username,
-    email,
-    saltB64,
-    iterations,
-    wrapIvB64,
-    wrappedMasterKeyB64
-  } = req.body;
-
-  const { data, error } = await supabase
-    .from('users')
-    .insert([{
-      username,
-      email,
-      salt: saltB64,
-      iterations,
-      iv: wrapIvB64,
-      wrapped_master_key: wrappedMasterKeyB64
-    }]);
-
-  if (error) {
-    return res.status(400).json({ error: error.message });
-  }
-
-  res.json({ ok: true });
-}); */

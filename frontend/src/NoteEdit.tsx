@@ -1,44 +1,82 @@
 import { useEffect, useState } from 'react'
 import { connectSocket, sendMessage } from "./WebSocketConnect";
+import { useLocation, useNavigate } from "react-router-dom";
 import './NoteEdit.css'
 
-function NotePage() {
+function noteEdit() {
+
+	const navigate = useNavigate();
 	
-	const [title, setTitle] = useState("Untitled Document");
+	//for getting the note name if we come here from list
+	const location = useLocation();
+	const ogNoteName = location.state?.noteName;
+	
+	const [pinned, setPinned] = useState(false);
+	
+	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
 	const [content, setContent] = useState("");
   
 	useEffect(() => {
+	
+		//clear the location state stuff
+		if (window.history.replaceState) {
+		  window.history.replaceState({}, document.title);
+		}
 		
 		connectSocket((data) => {
-			console.log("Received:", data);
-		/*
-			try {
-			
-				const recieved = JSON.parse(data);
+			if (typeof data === "object") {	
+					
+				if (data.got === "NoteForEdit") {
 				
-
-			} catch {
+					setContent(data.noteData);
+					
+					setPinned(data.pinned);
+					
+				}
+				
+			} else {			
 				console.log("Received:", data);
-			} 
-			*/
+			}
 		});
 		
+		if (!ogNoteName) {
+			console.log("no note selected, want to make new note")
+		} else { //load the new note
+		
+			if (true) { //if its a server note
+			
+				console.log("Requesting Note");
+			
+				sendMessage(JSON.stringify({
+					command: "GetNote",
+					noteName: ogNoteName
+				}));
+			
+			} // else if its a client note
+		
+		}
+		
 	}, [])
+	
+
 	
 	const doSaveServer = () => {
 		const noteName = title; 
 		const noteData = content; //these should be encrypted before sending
 		
-		if (true) { //if its a newly made note vs editing old note
+		if (!ogNoteName) { //if its a newly made note vs editing old note
 			sendMessage(JSON.stringify({
 				command: "NewNote",
 				name: noteName,
+				pinned: pinned,
 				data: noteData
 			}));
 		} else {
 			sendMessage(JSON.stringify({
 				command: "Override",
-				name: noteName,
+				name: ogNoteName,
+				newName: noteName,
+				pinned: pinned,
 				data: noteData
 			}));
 		}
@@ -49,11 +87,11 @@ function NotePage() {
 	}
 	
 	const togglePin = () => {
-	
+		setPinned(!pinned);
 	}
 	
 	const doCancel = () => {
-		//just go back to the list page
+		navigate("/NoteList");
 	}
 	
 	const attachFile = () => {
@@ -61,12 +99,11 @@ function NotePage() {
 	}
 	
 	const doDelete = () => {
-		const noteName = title; 
 		if (true) { //if its a note thats been saved before
 			//also make sure the name changing is accounted for
 			sendMessage(JSON.stringify({
 				command: "DeleteNote",
-				name: noteName
+				name: ogNoteName
 			}));
 		}
 		doCancel();
@@ -97,7 +134,7 @@ function NotePage() {
 			</button>
 			
 			<button onClick={togglePin}>
-			Pin {/* Should Change to unpin if is pinned */}
+			{pinned ? "Unpin" : "Pin"}
 			</button>
 			
 			<button onClick={attachFile}>
@@ -125,4 +162,4 @@ function NotePage() {
   )
 }
 
-export default NotePage;
+export default noteEdit;
