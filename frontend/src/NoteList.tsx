@@ -16,6 +16,7 @@ function NotePage() {
 
 	const navigate = useNavigate();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
+	const [searchTerm, setSearchTerm] = useState<string>('');
   
 	useEffect(() => {
 		
@@ -77,7 +78,19 @@ function NotePage() {
 	}
 
 	function loadListAfterServer(notes: NoteForSort[]) {
-		const sorted = sortNotes(notes, sortBy);
+	
+		const filtered = NoteForSort[] = [];
+		
+		//remove notes without search term
+		for (const note of notes) {
+			if (note.name.toLowerCase().includes(searchTerm.toLowerCase()) {
+				filtered.push(note);
+			}
+		}
+	
+		const sorted = sortNotes(filtered, sortBy);
+		
+		
 		addNotesToList(sorted);
 	}
 
@@ -111,6 +124,10 @@ function NotePage() {
 			listBox.appendChild(item);
 		}
 	}
+	
+	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+		setSearchTerm(event.target.value);
+	};
 
   return (
 	<div className="list-page">
@@ -123,7 +140,12 @@ function NotePage() {
 	
 	
 		<div className="controls">
-			<input type="text" placeholder="Search..."/>
+			<input 
+				type="text" 
+				placeholder="Search..."
+			    value={searchTerm}
+				onChange={handleInputChange}
+			/>
 			<select
 				value={sortBy}
 				onChange={(e) => setSortBy(e.target.value as SortOption)}
