@@ -5,6 +5,7 @@ import http from "http"
 import dotenv from "dotenv"
 import { WebSocketServer, WebSocket } from "ws";
 import { createClient } from "@supabase/supabase-js" 
+import cors from "cors" // CORS resolution to accept HTTP requests on 8080 from 5173
 
 // For Supabase connection
 dotenv.config();
@@ -26,6 +27,11 @@ import { getFileNames, getFile, uploadFile, deleteFile, updateFile } from "./con
 
 // RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
 const app = express();
+app.use(cors({
+	origin: "http://localhost:5173", // this may need to be changed to sm more scalable in the future
+	methods: ["GET", "POST", "PUT", "DELETE"],
+	credentials: true
+}));
 app.use(express.json())
 
 app.post("/api/auth/signup", handleSignup);
@@ -173,7 +179,7 @@ server.listen(PORT, () => {
   console.log(`WebSocket running at ws://localhost:${PORT}`);
 });
 
-// somewhat temporary stuff, I think the better way will be to have a separate file for database functions
+/* somewhat temporary stuff, I think the better way will be to have a separate file for database functions
 // and then just import them and call them in the switch cases above, but for now this is fine
 
 app.post('/api/signup', async (req, res) => {
@@ -202,4 +208,4 @@ app.post('/api/signup', async (req, res) => {
   }
 
   res.json({ ok: true });
-});
+}); */

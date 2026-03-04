@@ -18,7 +18,9 @@ async function request(method: string, path: string, body?: any) {
     });
 
     if (!response.ok) {
-        throw new Error("Request failed -- the base URL might have changed.");
+    const errorText = await response.text();
+    console.error("Backend error:", errorText);
+    throw new Error(errorText);
     }
 
     return response.json();

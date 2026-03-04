@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./SignUp.css";
 
-import type { IncomingSignupData, IncomingLoginData, OutgoingSignupData } from "./crypto/lockinCrypto";
-import { generateSignupCredentials } from "./crypto/lockinCrypto.ts";
-import { requestSignup } from "./api.ts";
+import type { IncomingSignupData, OutgoingSignupData } from "./crypto/lockinCrypto";
+import { generateSignupCredentials } from "./crypto/lockinCrypto";
+import { requestSignup } from "./api";
 
 const SignUp: React.FC = () => {
 	const navigate = useNavigate();
@@ -15,6 +15,14 @@ const SignUp: React.FC = () => {
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		console.log("Signup button clicked!");
+
+		// Check if passwords match and throw placeholder error for now
+		if (password !== confirmPassword) {
+			console.error("Passwords don't match");
+			alert("Passwords don't match!");
+			return;
+		}
 		
 		try {
 
@@ -34,15 +42,16 @@ const SignUp: React.FC = () => {
 				return;
 			}
 
+			console.log("Request sent!");
 			// Step 2: Send HTTP request to server
-			await SignUp(cryptoResult.payload);
+			await requestSignup(cryptoResult.payload);
 
 			// Step 3: Navigate to noteEdit page
 			console.log("Signing up with:", { name, email, password });
 			navigate("/noteEdit");
 
 		} catch (e) {
-			console.log("Error in generating artifacts -- this probably means web crypto api failed.");
+			console.log(String(e));
 		}
 	};
 
@@ -52,7 +61,7 @@ const SignUp: React.FC = () => {
 				<h2 className="auth-title">Create an account</h2>
 				<p className="auth-subtitle">Join LockIn and get started</p>
 
-				<form className="auth-form" onSubmit={handleSubmit}>
+				<form className="auth-form">
 					<label className="auth-label">
 						<span>Name</span>
 						<input
@@ -101,7 +110,7 @@ const SignUp: React.FC = () => {
 						/>
 					</label>
 
-					<button type="submit" className="auth-button">
+					<button type="button" onClick={handleSubmit as any} className="auth-button">
 						Sign Up
 					</button>
 				</form>
