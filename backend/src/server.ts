@@ -52,7 +52,7 @@ app.use(express.static(frontendPath));
 // API routes (must be before catch-all so they are reachable)
 app.use(express.json());
 
-function validateSignupBody(body) {
+function validateSignupBody(body: any) {
   const { username, email, saltB64, iterations, wrapIvB64, wrappedMasterKeyB64 } = body ?? {};
   if (!username || typeof username !== "string" || !username.trim())
     return { ok: false, error: "Username is required" };
