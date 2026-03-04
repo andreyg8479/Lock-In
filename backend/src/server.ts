@@ -26,7 +26,7 @@ import { handleSignup, handleLogin } from "./controllers/AuthController";
 import { getFileNames, getFile, uploadFile, deleteFile, updateFile } from "./controllers/VaultController";
 
 // RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
-const app = express();
+export const app = express();
 app.use(cors({
 	origin: "http://localhost:5173", // this may need to be changed to sm more scalable in the future
 	methods: ["GET", "POST", "PUT", "DELETE"],
