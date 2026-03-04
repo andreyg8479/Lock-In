@@ -2,10 +2,10 @@
   "name": "simple-server",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
     "test": "jest",
-    "dev": "nodemon server.js"
+    "dev": "nodemon --watch . --ext ts --exec ts-node src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,13 +13,23 @@
   "type": "commonjs",
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
+    "cors": "^2.8.6",
+    "dezalgo": "^1.0.4",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "ws": "^8.19.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.3.2",
+    "@types/ws": "^8.18.1",
     "jest": "^30.2.0",
     "nodemon": "^3.1.14",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

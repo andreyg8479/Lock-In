@@ -1,30 +1,50 @@
+// server.ts
+import express from "express"
+import path from "path"
+import http from "http"
+import dotenv from "dotenv"
+import { WebSocketServer, WebSocket } from "ws";
+import { createClient } from "@supabase/supabase-js" 
+import cors from "cors" // CORS resolution to accept HTTP requests on 8080 from 5173
 
+// For Supabase connection
+dotenv.config();
+const url = process.env.SUPABASE_URL;
+const key = process.env.SUPABASE_KEY;
 
-const express = require("express");
-const path = require("path"); //for file paths
-const http = require("http"); // for http which I apparently need to connect to react
+// Check if environment variables are set
+if (!url || !key) {
+	throw new Error("SUPABASE_URL and SUPABASE_KEY must be set in environment variables");
+}
 
-// For database connection
-require('dotenv').config({ path: path.resolve(__dirname, '..', 'db.env') });
+const supabase = createClient(url, key);
 
-// Database stuff
-
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
-
-const WebSocket = require("ws");
-
+// Note: This WS stuff is legacy code because we switched to a RESTful API
 const PORT = process.env.PORT || 8080;
 
+import { handleSignup, handleLogin } from "./controllers/AuthController";
+import { getFileNames, getFile, uploadFile, deleteFile, updateFile } from "./controllers/VaultController";
 
-// react stuff
-const app = express();
+// RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
+export const app = express();
+app.use(cors({
+	origin: "http://localhost:5173", // this may need to be changed to sm more scalable in the future
+	methods: ["GET", "POST", "PUT", "DELETE"],
+	credentials: true
+}));
+app.use(express.json())
+
+app.post("/api/auth/signup", handleSignup);
+app.post("/api/auth/login", handleLogin);
+
+app.get("/api/vault/fileNames", getFileNames);
+app.get("/api/vault/file", getFile);
+app.post("/api/vault/file", uploadFile);
+app.delete("/api/vault/file", deleteFile);
+app.put("/api/vault/file", updateFile);
+
 // this is to serve the react front end
-const frontendPath = path.resolve(__dirname, "..", "frontend", "dist");
+const frontendPath = path.resolve(__dirname, "../../frontend/dist");
 console.log("Serving frontend from:", frontendPath);
 
 app.use(express.static(frontendPath));
@@ -32,7 +52,7 @@ app.use(express.static(frontendPath));
 // API routes (must be before catch-all so they are reachable)
 app.use(express.json());
 
-function validateSignupBody(body) {
+function validateSignupBody(body: any) {
   const { username, email, saltB64, iterations, wrapIvB64, wrappedMasterKeyB64 } = body ?? {};
   if (!username || typeof username !== "string" || !username.trim())
     return { ok: false, error: "Username is required" };
@@ -107,25 +127,26 @@ app.post('/api/delete', async (req, res) => {
 
 // this creates an http server
 const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
 
-
-const wss = new WebSocket.Server({ server });
-
-
-const State = Object.freeze({ //this can be replaced with an actual enum if we switch to typescript
-  STANDARD: 'STANDARD', //for most requests (create note, fetch names, ect)
-  VERIFYING: 'VERIFYING', //When verifying password
-  KEY_SETUP: 'KEY_SETUP', //For setting up verification key
-});
-
+// this is boilerplate to get the current SM stuff to work with typescript
+// but ideally this gets phased about by the REST API
+enum State {
+	STANDARD = "STANDARD",
+	VERIFYING = "VERIFYING",
+	KEY_SETUP = "KEY_SETUP"
+}
 
 //Runs when a browser connects, basicly this is any individual client
 wss.on("connection", (socket) => {
   console.log("Client connected");
   
   socket.send("Hello Client");
-  
-  let SM = State.STANDARD; //State Machine
+
+  // let SM = State.STANDARD; //State Machine
+  const state = {
+	SM: State.STANDARD as State
+  };
   
   //socket.send(); //use this to send stuff to the client
   
@@ -135,7 +156,7 @@ wss.on("connection", (socket) => {
 	try {
 	const recieved = JSON.parse(message.toString());
 	
-	switch (SM) { //handle the request based on the state
+	switch (state.SM) { //handle the request based on the state
 		case State.STANDARD:
 			//code
 			
@@ -270,17 +291,3 @@ wss.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
-
-
-
-// somewhat temporary stuff, I think the better way will be to have a separate file for database functions
-// and then just import them and call them in the switch cases above, but for now this is fine
-
-if (require.main === module) {
-  server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-    console.log(`WebSocket running at ws://localhost:${PORT}`);
-  });
-}
-
-module.exports = { app };

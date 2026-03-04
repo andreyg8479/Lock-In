@@ -12,7 +12,7 @@ jest.mock("@supabase/supabase-js", () => ({
   createClient: (...args) => mockCreateClient(...args),
 }));
 
-const { app } = require("../server");
+const { app } = require("../src/server");
 
 beforeEach(() => {
   jest.clearAllMocks();

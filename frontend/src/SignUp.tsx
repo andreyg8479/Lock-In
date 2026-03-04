@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./SignUp.css";
 
+import type { IncomingSignupData, OutgoingSignupData } from "./crypto/lockinCrypto";
+import { generateSignupCredentials } from "./crypto/lockinCrypto";
+import { requestSignup } from "./api";
+
 const SignUp: React.FC = () => {
 	const navigate = useNavigate();
 	const [name, setName] = useState("");
@@ -9,16 +13,46 @@ const SignUp: React.FC = () => {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 
-	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		// Simple client-side check – replace with real backend call later
+		console.log("Signup button clicked!");
+
+		// Check if passwords match and throw placeholder error for now
 		if (password !== confirmPassword) {
-			alert("Passwords do not match.");
+			console.error("Passwords don't match");
+			alert("Passwords don't match!");
 			return;
 		}
+		
+		try {
 
-		console.log("Signing up with:", { name, email, password });
-		navigate("/noteEdit");
+			// Format the GUI element entries as type IncomingSignupData
+			const signupInput: IncomingSignupData = {
+				username: name,
+				email,
+				password
+			};
+
+			// Step 1: Generate crypto metadata
+			const cryptoResult: OutgoingSignupData = await generateSignupCredentials(signupInput);
+
+			// "Discriminated Union Narrowing"
+			if (!cryptoResult.ok) {
+				alert(cryptoResult.payload.errorMessage);
+				return;
+			}
+
+			console.log("Request sent!");
+			// Step 2: Send HTTP request to server
+			await requestSignup(cryptoResult.payload);
+
+			// Step 3: Navigate to noteEdit page
+			console.log("Signing up with:", { name, email, password });
+			navigate("/noteEdit");
+
+		} catch (e) {
+			console.log(String(e));
+		}
 	};
 
 	return (
@@ -27,7 +61,7 @@ const SignUp: React.FC = () => {
 				<h2 className="auth-title">Create an account</h2>
 				<p className="auth-subtitle">Join LockIn and get started</p>
 
-				<form className="auth-form" onSubmit={handleSubmit}>
+				<form className="auth-form">
 					<label className="auth-label">
 						<span>Name</span>
 						<input
@@ -76,7 +110,7 @@ const SignUp: React.FC = () => {
 						/>
 					</label>
 
-					<button type="submit" className="auth-button">
+					<button type="button" onClick={handleSubmit as any} className="auth-button">
 						Sign Up
 					</button>
 				</form>
