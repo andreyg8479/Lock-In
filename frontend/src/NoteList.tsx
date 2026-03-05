@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate } from "react-router-dom";
 import { connectSocket, sendMessage, checkSocket } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
@@ -17,6 +17,17 @@ function NotePage() {
 	const navigate = useNavigate();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
 	const [searchTerm, setSearchTerm] = useState<string>('');
+	
+	const searchTermRef = useRef(searchTerm);
+	const sortByRef = useRef(sortBy);
+
+	useEffect(() => {
+		searchTermRef.current = searchTerm;
+	}, [searchTerm]);
+
+	useEffect(() => {
+		sortByRef.current = sortBy;
+	}, [sortBy]);
   
 	useEffect(() => {
 		
@@ -45,7 +56,7 @@ function NotePage() {
 						});
 					}
 
-					loadListAfterServer(noteList);
+					loadListAfterServer(noteList, searchTermRef.current, sortByRef.current);
 				}
 				
 			} else {			
@@ -77,18 +88,19 @@ function NotePage() {
 	  
 	}
 
-	function loadListAfterServer(notes: NoteForSort[]) {
+	function loadListAfterServer(notes: NoteForSort[], term = searchTerm, sort = sortBy) {
 	
 		const filtered: NoteForSort[] = [];
+	
 		
 		//remove notes without search term
 		for (const note of notes) {
-			if (note.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+			if (note.name.toLowerCase().includes(term.toLowerCase())) {
 				filtered.push(note);
 			}
 		}
 	
-		const sorted = sortNotes(filtered, sortBy);
+		const sorted = sortNotes(filtered, sort);
 		
 		
 		addNotesToList(sorted);
@@ -125,6 +137,10 @@ function NotePage() {
 		}
 	}
 	
+	function homeButton() {
+		navigate("/");
+	}
+	
 	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
 		setSearchTerm(event.target.value);
 	};
@@ -133,7 +149,7 @@ function NotePage() {
 	<div className="list-page">
 	
 		<div className="top-bar">
-			<button className="home-button">Home</button>
+			<button className="home-button" onClick={homeButton}>Home</button>
 			<h1>Your Notes</h1>
 			<button className="refresh-button" onClick={loadList} >Refresh</button>
 		</div>

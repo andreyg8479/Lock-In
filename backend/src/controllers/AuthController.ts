@@ -94,3 +94,17 @@ export async function handleLogin(req: Request, res: Response) {
     }
 
 }
+
+export async function deleteUser(req: Request, res: Response) {
+
+    const { username } = req.body;
+	
+	const { data, error } = await supabase
+	.from('users')
+	.delete()
+	.eq('username', username); 
+	
+	return res.status(201).json({ ok: true });
+
+
+}
