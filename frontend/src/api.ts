@@ -49,3 +49,7 @@ export async function getNote(id: string) {
 export async function updateNote(id: string) {
     return request("PUT", `/api/vault/file/${id}`);
 }
+
+export async function requestDeleteAccount(payload: any) {
+    return request("DELETE", "/api/auth/account", payload);
+}
