@@ -3,6 +3,19 @@ import { supabase } from "../supabaseClient";
 
 export async function getAllNoteNames(req: Request, res: Response) {
 
+    const { data, error } = await supabase
+        .from('notes')
+        .select('note_title')
+        .order('date', { ascending: false });
+
+    // generic error
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(201).json({ note_titles: data });		
+
+
 }
 
 export async function getNote(req: Request, res: Response) {
@@ -17,14 +30,9 @@ export async function getNote(req: Request, res: Response) {
     if (noteError) {
         return res.status(400).json({ error: noteError.message });
     }
-
-    // note to get not found
-    if (!notes) {
-        return res.status(404).json({ error: "Note not found" });
-    }
     
     // otherwise note found successfully
-    return res.status(201).json({ ok: true });		
+    return res.status(201).json({ note: notes });		
 				
 }
 
@@ -39,11 +47,6 @@ export async function uploadNote(req: Request, res: Response) {
     // generic error
     if (error) {
         return res.status(400).json({ error: error.message });
-    }
-
-    // note to delete not found
-    if (!data) {
-        return res.status(404).json({ error: "Note not found" });
     }
 
     // otherwise note uploaded successfully
@@ -84,8 +87,9 @@ export async function updateNote(req: Request, res: Response) {
         return res.status(400).json({ error: error.message });
     }
 
-    // otherwise note updated successfully
-    return res.status(200).json({ ok: true });
+    // note updated successfully
+    return res.status(201).json({ ok: true });
+
 }
 
 export async function deleteNote(req: Request, res: Response) {
@@ -100,11 +104,6 @@ export async function deleteNote(req: Request, res: Response) {
     // generic error
     if (error) {
         return res.status(400).json({ error: error.message });
-    }
-
-    // note to delete not found
-    if (!data) {
-        return res.status(404).json({ error: "Note not found" });
     }
 
     // otherwise note deleted successfully
