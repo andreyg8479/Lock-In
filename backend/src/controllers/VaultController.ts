@@ -34,6 +34,16 @@ export async function updateNote(req: Request, res: Response) {
 }
 
 export async function deleteNote(req: Request, res: Response) {
+
+
+    const { note_title } = req.body;
+	
+	const { data, error } = await supabase
+	.from('notes')
+	.delete()
+	.eq('note_title', note_title); 
+
+	return res.status(201).json({ ok: true });
     
 }
 
