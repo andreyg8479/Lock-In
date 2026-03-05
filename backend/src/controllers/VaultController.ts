@@ -19,3 +19,11 @@ export async function updateNote(req: Request, res: Response) {
 export async function deleteNote(req: Request, res: Response) {
     
 }
+
+export async function pinNote(req: Request, res: Response) {
+
+}
+
+export async function unpinNote(req: Request, res: Response) {
+    
+}

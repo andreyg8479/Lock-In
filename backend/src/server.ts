@@ -43,6 +43,8 @@ app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);
 app.put("/api/vault/file", updateNote);
 
+app.put("")
+
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");
 console.log("Serving frontend from:", frontendPath);
