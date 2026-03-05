@@ -108,3 +108,9 @@ export async function deleteUser(req: Request, res: Response) {
 
 
 }
+
+export async function deleteAccount(req: Request, res: Response) {
+
+    // TODO delte acc from database
+
+}
