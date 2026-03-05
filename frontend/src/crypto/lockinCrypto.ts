@@ -1,3 +1,4 @@
+// Represents public crypto metadata associated with each account
 export type SignupCryptoArtifacts = {
 
     kdf: "PBKDF2";
@@ -13,6 +14,7 @@ export type SignupCryptoArtifacts = {
     v: 1;
 };
 
+// What the signup logic gets back from lockinCrypto, i.e. successfully generated artifacts
 export type OutgoingSignupData =
   | {
       ok: true;
@@ -30,7 +32,7 @@ export type OutgoingSignupData =
     };
 
 
-
+// Raw GUI fields that lockinCrypto uses to generate crypto metadata
 export type IncomingSignupData = {
 
     username: string,
@@ -39,13 +41,16 @@ export type IncomingSignupData = {
 
 };
 
+// Sent by login logic to lockinCrypto to attempt to unwrap the vault key  
 export type IncomingLoginData = {
+    email: string
     username: string;
-    email: string;
-    password: string;
+    attemptedPassword: string;
     artifacts: SignupCryptoArtifacts;
 };
 
+// What the login logic gets back from lockinCrypto upon successful sign-in
+// the vaultKey is the actual key used to encrypt and decrypt files and never leaves the client
 export type OutgoingLoginData =
   | {
       ok: true;
@@ -65,6 +70,7 @@ const SALT_LEN = 16; // bytes
 const IV_LEN = 12; // bytes (96 bits) for AES-GCM
 const MASTER_KEY_LEN = 32; // bytes for AES-256 (256 bits)
 
+// Generate the crypto metadata to be associated with this account
 export async function generateSignupCredentials(data: IncomingSignupData): Promise<OutgoingSignupData> {
 
     try {
@@ -114,9 +120,10 @@ export async function generateSignupCredentials(data: IncomingSignupData): Promi
 
 }
 
+// Attempt to unwrap the wrapped master key, given to the client by the server
 export async function handleLogin(data: IncomingLoginData): Promise<OutgoingLoginData> {
     try {
-        const { username, email, password, artifacts } = data;
+        const { username, email, attemptedPassword, artifacts } = data;
         
         // Ensure supported KDF and Cipher
         if (artifacts.kdf !== "PBKDF2" || artifacts.cipher !== "AES-GCM") {
@@ -128,7 +135,7 @@ export async function handleLogin(data: IncomingLoginData): Promise<OutgoingLogi
         const wrappedMasterKey = fromBase64(artifacts.wrappedMasterKeyB64);
 
         // Step 1: Derive wrapping key from password
-        const wrappingKey = await deriveAesGcmKeyFromPassword(password, salt, artifacts.kdfIterations);
+        const wrappingKey = await deriveAesGcmKeyFromPassword(attemptedPassword, salt, artifacts.kdfIterations);
 
         // Bind the wrapping key to the username and email
         const aad = utf8Bytes(`${username}\n${email}`);
@@ -152,6 +159,7 @@ export async function handleLogin(data: IncomingLoginData): Promise<OutgoingLogi
     }
 }
 
+// Wrapper for the Web Crypto API -- derives the true key from the password (but I dont think its derives directly for now)
 async function deriveAesGcmKeyFromPassword(password: string, salt: Uint8Array, iterations: number): Promise<CryptoKey> {
     const baseKey = await window.crypto.subtle.importKey(
         "raw",

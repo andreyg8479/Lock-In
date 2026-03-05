@@ -23,7 +23,7 @@ const supabase = createClient(url, key);
 const PORT = process.env.PORT || 8080;
 
 import { handleSignup, handleLogin } from "./controllers/AuthController";
-import { getFileNames, getFile, uploadFile, deleteFile, updateFile } from "./controllers/VaultController";
+import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote } from "./controllers/VaultController";
 
 // RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
 export const app = express();
@@ -37,11 +37,11 @@ app.use(express.json())
 app.post("/api/auth/signup", handleSignup);
 app.post("/api/auth/login", handleLogin);
 
-app.get("/api/vault/fileNames", getFileNames);
-app.get("/api/vault/file", getFile);
-app.post("/api/vault/file", uploadFile);
-app.delete("/api/vault/file", deleteFile);
-app.put("/api/vault/file", updateFile);
+app.get("/api/vault/fileNames", getAllNoteNames);
+app.get("/api/vault/file", getNote);
+app.post("/api/vault/file", uploadNote);
+app.delete("/api/vault/file", deleteNote);
+app.put("/api/vault/file", updateNote);
 
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");
@@ -70,7 +70,7 @@ function validateSignupBody(body: any) {
   return { ok: true };
 }
 
-app.post('/api/signup', async (req, res) => {
+/* app.post('/api/signup', async (req, res) => {
   const validation = validateSignupBody(req.body);
   if (!validation.ok) return res.status(400).json({ error: validation.error });
 
@@ -99,7 +99,7 @@ app.post('/api/signup', async (req, res) => {
   }
 
   res.json({ ok: true });
-});
+}); */
 
 //this is some kind of backup router
 app.use((req, res) => {
@@ -290,4 +290,8 @@ wss.on("connection", (socket) => {
   socket.on("close", () => {
     console.log("Client disconnected");
   });
+});
+
+server.listen(PORT, () => {
+	console.log(`Server started on port ${PORT}`);
 });

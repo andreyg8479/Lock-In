@@ -41,13 +41,11 @@ const SignUp: React.FC = () => {
 				alert(cryptoResult.payload.errorMessage);
 				return;
 			}
-
-			console.log("Request sent!");
+			
 			// Step 2: Send HTTP request to server
 			await requestSignup(cryptoResult.payload);
 
 			// Step 3: Navigate to noteEdit page
-			console.log("Signing up with:", { name, email, password });
 			navigate("/noteEdit");
 
 		} catch (e) {
