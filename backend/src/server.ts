@@ -41,9 +41,8 @@ app.get("/api/vault/fileNames", getAllNoteNames);
 app.get("/api/vault/file", getNote);
 app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);
-app.put("/api/vault/file", updateNote);
-
-app.put("")
+app.put("/api/vault/file", updateNote); // Legacy support
+app.put("/api/vault/file/:noteId", updateNote); // New support for ID-based updates
 
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");
