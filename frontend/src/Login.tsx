@@ -54,7 +54,7 @@ const Login: React.FC = () => {
 			if (result.ok) {
 				// Save the vault key or session token here if needed
 				// For now just navigate
-				navigate("/noteEdit");
+				navigate("/");
 			} else {
 				alert(result.payload.errorMessage);
 			}
