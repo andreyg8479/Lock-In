@@ -182,13 +182,114 @@ async function deriveAesGcmKeyFromPassword(password: string, salt: Uint8Array, i
     );
 }
 
-/*
-    TODO:
-    1) Function for uploading and encrypting a file
-    2) Function for decrypting a recieved file
-    3) Function for decrypting the users' filenames
+import type { EncryptedNote, DecryptedNote } from "../../../shared_types/note_types"
 
-*/
+export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoKey): Promise<EncryptedNote> {
+
+    // Step 1: Generate a new random IV (this will never be reused anywhere for security)
+    const iv = randomBytes(IV_LEN);
+
+    // Step 2: encrypt the note itself
+    const contentBuffer = utf8Bytes(uploadedNote.plaintext);
+
+    const ciphertextBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        vaultKey,
+        toArrayBuffer(contentBuffer)
+    );
+
+    // Step 3: encrypt the name, with a separate IV to prevent reuse
+    const nameIv = randomBytes(IV_LEN);
+    const nameBuffer = utf8Bytes(uploadedNote.name);
+
+    const encryptedNameBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(nameIv) },
+        vaultKey,
+        toArrayBuffer(nameBuffer)
+    );
+
+    // Step 4: Pack the name and IV together (we could make it a separate field later
+    // for but now this works)
+    const combinedName = new Uint8Array(nameIv.length + encryptedNameBuffer.byteLength);
+    combinedName.set(nameIv);
+    combinedName.set(new Uint8Array(encryptedNameBuffer), nameIv.length);
+
+    return {
+        userID: uploadedNote.userID,
+        noteID: uploadedNote.id,
+        encryptedName: toBase64(combinedName),
+        ciphertextB64: toBase64(new Uint8Array(ciphertextBuffer)),
+        ivB64: toBase64(iv),
+        pinned: uploadedNote.pinned
+    };
+}
+
+export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: CryptoKey): Promise<DecryptedNote> {
+    
+    // Step 1: extract the IV and ciphertext and decrypt
+    const iv = fromBase64(encryptedNote.ivB64);
+    const ciphertext = fromBase64(encryptedNote.ciphertextB64);
+
+    const plaintextBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        vaultKey,
+        toArrayBuffer(ciphertext)
+    );
+
+    const plaintext = new TextDecoder().decode(plaintextBuffer);
+
+    // Step 2: decrypt the file name
+    const combinedName = fromBase64(encryptedNote.encryptedName);
+    const nameIv = combinedName.slice(0, IV_LEN);
+    const encryptedName = combinedName.slice(IV_LEN);
+
+    const nameBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(nameIv) },
+        vaultKey,
+        toArrayBuffer(encryptedName)
+    );
+
+    const name = new TextDecoder().decode(nameBuffer);
+
+    return {
+        userID: encryptedNote.userID,
+        id: encryptedNote.noteID,
+        name: name,
+        plaintext: plaintext,
+        ivB64: encryptedNote.ivB64,
+        pinned: encryptedNote.pinned
+    };
+}
+
+export async function decryptFilenames(encryptedFilenames: string[], vaultKey: CryptoKey): Promise<string[]> {
+    
+    // Will keep track of the filenames decrypted so far
+    const decryptedNames: string[] = [];
+
+    // Loop over the encrypted filenames and decrypt them
+    // we will need to update this logic if we decide to separate name iv in the type 
+    for (const encryptedNameB64 of encryptedFilenames) {
+        try {
+            const combinedName = fromBase64(encryptedNameB64);
+            const iv = combinedName.slice(0, IV_LEN);
+            const ciphertext = combinedName.slice(IV_LEN);
+
+            const nameBuffer = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: toArrayBuffer(iv) },
+                vaultKey,
+                toArrayBuffer(ciphertext)
+            );
+
+            decryptedNames.push(new TextDecoder().decode(nameBuffer));
+        } catch (e) {
+            console.error("Failed to decrypt filename:", e);
+            // Push placeholder for now
+            decryptedNames.push("[Decryption Failed]");
+        }
+    }
+
+    return decryptedNames;
+}
 
 /*  Generate cryptographically-secure random bytes
     For use in generating salts and IVs
@@ -199,6 +300,7 @@ function randomBytes(n: number): Uint8Array {
     return out;
 }
 
+// convert string to an array of utf8 encoded bytes (ex: ABC becomes 65, 66, 67)
 function utf8Bytes(str: string): Uint8Array {
     return new TextEncoder().encode(str);
 }
@@ -208,6 +310,7 @@ function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
     return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
 }
 
+// convert ui8 bytes to string
 function toBase64(bytes: Uint8Array): string {
     // browser's btoa works on strings, so we need to convert bytes to a binary string first
     let binary = "";
@@ -217,6 +320,7 @@ function toBase64(bytes: Uint8Array): string {
     return btoa(binary);
 }
 
+// convert string to ui8 bytes
 export function fromBase64(b64: string): Uint8Array {
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
