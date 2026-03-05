@@ -11,7 +11,6 @@ import { Request, Response } from "express";
 
 */
 export async function handleSignup(req: Request, res: Response) {
-    console.log("handleSignup reached!");
 
     try {
 
@@ -35,6 +34,7 @@ export async function handleSignup(req: Request, res: Response) {
                 cipher: artifacts.cipher,
                 aes_key_length: artifacts.aesKeyLength,
                 gcm_iv_length: artifacts.gcmIVLength,
+                iv: artifacts.ivB64,
                 version: artifacts.v} as any // temporary fix to get TS to shut up
             ]);
 
@@ -55,5 +55,42 @@ export async function handleSignup(req: Request, res: Response) {
 }
 
 export async function handleLogin(req: Request, res: Response) {
-    console.log("handleSignup reached!");
+    
+    try {
+
+        // Step 1: extract the email from the HTTP payload
+        const { email } = req.body;
+
+        // Step 2: validate that it's not empty
+        if (!email) {
+            return res.status(400).json({ error: "Missing login information"});
+        }
+
+        // TODO: don't return ALL info about the user, 
+        // just the crypto metadata (i.e. we dont want to leak the created_at timestamp)
+
+        // Step 3: search DB for the associated email 
+        const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .single();
+
+        if (error) {
+             return res.status(400).json({ error: error.message });
+        }
+
+        if (!data) {
+             return res.status(404).json({ error: "User not found" });
+        }
+
+        // otherwise email successfully found, reply with publicly known crypto metadata
+        return res.status(200).json(data);
+
+
+    } catch (e) {
+        console.log("Login error in backend/src/controllers/AuthController.ts", e);
+        return res.status(500).json({ error: "Internal server error"});
+    }
+
 }

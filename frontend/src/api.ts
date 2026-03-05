@@ -26,14 +26,22 @@ async function request(method: string, path: string, body?: any) {
     return response.json();
 }
 
+// Client sends the username and wrapped 
 export async function requestSignup(payload: any) {
     return request("POST", "/api/auth/signup", payload);
 }
 
-export async function getFileNames() {
+// Client sends the username of the account they're trying to sign into
+// Server replies with publicly known login credentials of that account,
+// so the client can attempt to unwrap the key
+export async function requestLogin(payload: any) {
+    return request("POST", "/api/auth/login", payload);
+}
+
+export async function getAllNoteNames() {
     return request("GET", "/api/vault/fileNames");
 }
 
-export async function getFile(id: string) {
+export async function getNote(id: string) {
     return request("GET", `/api/vault/file/${id}`);
 }
