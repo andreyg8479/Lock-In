@@ -179,45 +179,9 @@ wss.on("connection", (socket) => {
 					}));
 					
 				break;
-				case "GetNote":
-				
+				case "GetNote":			
 					
 					
-					//get note from database
-					const { data: notes, error: noteError } = await supabase
-                           .from('notes')
-                           .select('*')                // get all columns in the row
-                           .eq('note_title', recieved.noteName)
-                           .order('date', { ascending: false })
-                                                       
-					if (noteError) {
-						socket.send(JSON.stringify({
-							got: "NoteForEdit",
-							result: "Error: " + noteError.message
-						}));
-						return;
-					}
-
-					if (!notes || notes.length === 0) {
-						// no rows returned
-						socket.send(JSON.stringify({
-						  got: "NoteForEdit",
-						  result: "No note found with that title",
-						}));
-						break; // or return
-					  }
-					  
-					  const note = notes[0];
-					  // use note.note_text, note.pinned, etc.
-					
-					socket.send(JSON.stringify({
-						got: "NoteForEdit",
-						noteData: note.note_text,
-						pinned: note.pinned,
-						noteName: note.note_title,
-						date: note.date
-
-					}));
 					
 				break;
 				case "Override":
@@ -233,26 +197,7 @@ wss.on("connection", (socket) => {
 					//update node last update time 
 				break;
                 case "NewNote":
-					const { data, error } = await supabase.from('notes').insert([{ 
-						note_title: recieved.name, 
-						note_text: recieved.data, 
-						pinned: recieved.pinned, 
-						date: new Date().toISOString() }]);
-
-					if (error) {
-
-						socket.send(JSON.stringify({
-							got: "NewNote",
-							result: "Error: " + error.message
-						  }));
-						  return;
-					}
-
-					socket.send(JSON.stringify({
-						got: "NewNote",
-						result: "Note Created",
-
-					}));
+					
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
