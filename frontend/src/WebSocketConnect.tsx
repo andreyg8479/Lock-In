@@ -4,6 +4,7 @@ let socket : WebSocket | null = null;
 let currentListener: ((data: any) => void) | null = null;
 let userId: string | null = null;
 let authToken: string | null = null;
+let username: string | null = null;
 
 export function connectSocket(onMessage: (data: any) => void) {
 
@@ -78,11 +79,18 @@ export function getAuthToken() {
     return authToken;
 }
 
-// Setter functions
+export function getUsername() {
+    return username;
+}
+
 export function setUserId(id: string) {
     userId = id;
 }
 
 export function setAuthToken(token: string) {
     authToken = token;
+}
+
+export function setUsername(name: string) {
+    username = name;
 }
