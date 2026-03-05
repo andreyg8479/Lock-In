@@ -22,7 +22,7 @@ const supabase = createClient(url, key);
 // Note: This WS stuff is legacy code because we switched to a RESTful API
 const PORT = process.env.PORT || 8080;
 
-import { handleSignup, handleLogin } from "./controllers/AuthController";
+import { handleSignup, handleLogin, deleteAccount } from "./controllers/AuthController";
 import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote } from "./controllers/VaultController";
 
 // RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
@@ -43,6 +43,8 @@ app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);
 app.put("/api/vault/file", updateNote); // Legacy support
 app.put("/api/vault/file/:noteId", updateNote); // New support for ID-based updates
+
+app.delete("/api/auth/account", deleteAccount);
 
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");
