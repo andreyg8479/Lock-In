@@ -22,6 +22,19 @@ export async function handleSignup(req: Request, res: Response) {
             return res.status(400).json({ error: "Missing signup information"});
         }
 
+        //if username already exists, return error
+        const { data: existingUser, error: existingUserError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("username", username)
+            .single();
+            
+        if (existingUser) {
+            return res.status(400).json({ error: "Username already exists"});
+        }
+
+            
+
         const { data, error } = await supabase
             .from("users")
             .insert([
