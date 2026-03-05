@@ -2,7 +2,28 @@ import { Request, Response } from "express";
 import { supabase } from "../supabaseClient";
 
 export async function getAllNoteNames(req: Request, res: Response) {
+    const { userID } = req.body; 
 
+    // Assuming the user ID is supplied in the request body
+    if (!userID) {
+        return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const { data: notes, error } = await supabase
+        .from('notes')
+        .select('id, note_title, pinned, date')
+        .eq('user_id', userID)
+        .order('date', { ascending: false });
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    if (!notes) {
+        return res.status(404).json({ error: "No notes found" });
+    }
+
+    return res.status(200).json({ notes });
 }
 
 export async function getNote(req: Request, res: Response) {
