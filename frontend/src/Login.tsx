@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
-import { setUserId, setAuthToken, setUsername } from "./WebSocketConnect";
+import { setUserId } from "./WebSocketConnect"; // Fixed imports
 
 import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
 import { handleLogin } from "./crypto/lockinCrypto";
@@ -55,9 +55,10 @@ const Login: React.FC = () => {
 
 			if (result.ok) {
 				// Save the vault key or session token here if needed
-				//setUserId(result.userID);
-				setAuthToken(response.vaultKey);
-				setUsername(response.username);
+				setUserId(response.id);
+				
+				// setAuthToken(response.vaultKey);
+				// setUsername(response.username);
 				// For now just navigate
 				navigate("/");
 			} else {
