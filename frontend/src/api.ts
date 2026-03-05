@@ -45,3 +45,7 @@ export async function getAllNoteNames() {
 export async function getNote(id: string) {
     return request("GET", `/api/vault/file/${id}`);
 }
+
+export async function updateNote(id: string) {
+    return request("PUT", `/api/vault/file/${id}`);
+}
