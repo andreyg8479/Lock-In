@@ -90,7 +90,7 @@ function noteEdit() {
 		setPinned(!pinned);
 	}
 	
-	const doCancel = () => {
+	const doBack = () => {
 		navigate("/NoteList");
 	}
 	
@@ -121,8 +121,8 @@ function noteEdit() {
 	
 		<div className="buttons">
 		
-			<button onClick={doCancel}>
-			Cancel
+			<button onClick={doBack}>
+			Back
 			</button>
 			
 			<button onClick={doSaveServer}>

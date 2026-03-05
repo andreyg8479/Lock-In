@@ -2,8 +2,8 @@
 
 let socket : WebSocket | null = null;
 let currentListener: ((data: any) => void) | null = null;
-
-
+let userId: string | null = null;
+let authToken: string | null = null;
 
 export function connectSocket(onMessage: (data: any) => void) {
 
@@ -68,4 +68,21 @@ export function checkSocket() {
 	}
 	
 	return true;
+}
+
+export function getUserId() {
+    return userId;
+}
+
+export function getAuthToken() {
+    return authToken;
+}
+
+// Setter functions
+export function setUserId(id: string) {
+    userId = id;
+}
+
+export function setAuthToken(token: string) {
+    authToken = token;
 }
