@@ -108,22 +108,7 @@ app.use((req, res) => {
   });
 });
 
-app.post('/api/delete', async (req, res) => {
 
-	const { username } = req.body;
-	
-	const { data, error } = await supabase
-	.from('users')
-	.delete()
-	.eq('username', username); 
-
-	if (error) {
-		return res.status(400).json({ error: error.message });
-	  }
-	
-	res.json({ ok: true });
-
-});
 
 // this creates an http server
 const server = http.createServer(app);
