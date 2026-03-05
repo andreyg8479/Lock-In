@@ -177,45 +177,9 @@ wss.on("connection", (socket) => {
 					}));
 					
 				break;
-				case "GetNote":
-				
+				case "GetNote":			
 					
 					
-					//get note from database
-					const { data: notes, error: noteError } = await supabase
-                           .from('notes')
-                           .select('*')                // get all columns in the row
-                           .eq('note_title', recieved.noteName)
-                           .order('date', { ascending: false })
-                                                       
-					if (noteError) {
-						socket.send(JSON.stringify({
-							got: "NoteForEdit",
-							result: "Error: " + noteError.message
-						}));
-						return;
-					}
-
-					if (!notes || notes.length === 0) {
-						// no rows returned
-						socket.send(JSON.stringify({
-						  got: "NoteForEdit",
-						  result: "No note found with that title",
-						}));
-						break; // or return
-					  }
-					  
-					  const note = notes[0];
-					  // use note.note_text, note.pinned, etc.
-					
-					socket.send(JSON.stringify({
-						got: "NoteForEdit",
-						noteData: note.note_text,
-						pinned: note.pinned,
-						noteName: note.note_title,
-						date: note.date
-
-					}));
 					
 				break;
 				case "Override":
