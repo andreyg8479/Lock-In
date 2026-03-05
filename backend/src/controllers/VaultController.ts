@@ -30,7 +30,16 @@ export async function uploadNote(req: Request, res: Response) {
 }
 
 export async function updateNote(req: Request, res: Response) {
-    
+
+    const { data, error } = await supabase.from('notes').update({
+        note_title: req.body.name,
+        note_text: req.body.data,
+        pinned: req.body.pinned,
+        date: new Date().toISOString()
+    }).eq('note_title', req.body.name);
+
+    return res.status(201).json({ ok: true });
+
 }
 
 export async function deleteNote(req: Request, res: Response) {
