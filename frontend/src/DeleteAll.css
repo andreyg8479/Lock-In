@@ -1,0 +1,49 @@
+.delete-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.delete-container {
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+}
+
+.delete-container h1 {
+  margin-bottom: 10px;
+}
+
+.delete-container p {
+  margin-bottom: 30px;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+button {
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.back:hover {
+  background: #ccc;
+}
+
+.delete {
+  background: #d32f2f;
+  color: white;
+  font-weight: bold;
+}
+
+.delete:hover {
+  background: #b71c1c;
+}

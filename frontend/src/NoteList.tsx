@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { useNavigate } from "react-router-dom";
 import { connectSocket, sendMessage, checkSocket } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
@@ -79,11 +79,11 @@ function NotePage() {
 
 	function loadListAfterServer(notes: NoteForSort[]) {
 	
-		const filtered = NoteForSort[] = [];
+		const filtered: NoteForSort[] = [];
 		
 		//remove notes without search term
 		for (const note of notes) {
-			if (note.name.toLowerCase().includes(searchTerm.toLowerCase()) {
+			if (note.name.toLowerCase().includes(searchTerm.toLowerCase())) {
 				filtered.push(note);
 			}
 		}

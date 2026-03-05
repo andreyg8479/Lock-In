@@ -13,6 +13,7 @@ export function sortNotes(
   notes: NoteForSort[],
   sortBy: SortOption
 ): NoteForSort[] {
+  console.log(sortBy)
   const sorted = [...notes];
   sorted.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   return sorted;
