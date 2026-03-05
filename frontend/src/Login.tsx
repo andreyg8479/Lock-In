@@ -56,7 +56,7 @@ const Login: React.FC = () => {
 			if (result.ok) {
 				// Save the vault key or session token here if needed
 				//setUserId(result.userID);
-				setAuthToken(result.payload.vaultKey);
+				setAuthToken(result.vaultKey);
 				setUsername(response.username);
 				// For now just navigate
 				navigate("/");

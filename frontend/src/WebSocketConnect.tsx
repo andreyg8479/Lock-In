@@ -3,7 +3,7 @@
 let socket : WebSocket | null = null;
 let currentListener: ((data: any) => void) | null = null;
 let userId: string | null = null;
-let authToken: string | null = null;
+let authToken: CryptoKey | null = null;
 let username: string | null = null;
 
 export function connectSocket(onMessage: (data: any) => void) {
@@ -87,7 +87,7 @@ export function setUserId(id: string) {
     userId = id;
 }
 
-export function setAuthToken(token: string) {
+export function setAuthToken(token: CryptoKey) {
     authToken = token;
 }
 
