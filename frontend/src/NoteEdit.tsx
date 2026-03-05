@@ -102,7 +102,7 @@ function noteEdit() {
 	}
 	
 	const doDelete = () => {
-		if (true) { //if its a note thats been saved before
+		if (!ogNoteName) { //if its a note thats been saved before
 			//also make sure the name changing is accounted for
 			sendMessage(JSON.stringify({
 				command: "DeleteNote",
