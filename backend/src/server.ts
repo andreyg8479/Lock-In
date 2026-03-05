@@ -37,7 +37,7 @@ app.use(express.json())
 app.post("/api/auth/signup", handleSignup);
 app.post("/api/auth/login", handleLogin);
 
-app.get("/api/vault/fileNames", getAllNoteNames);
+app.post("/api/vault/fileNames", getAllNoteNames); // Changed to post to accept body easily
 app.get("/api/vault/file", getNote);
 app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);

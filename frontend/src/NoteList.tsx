@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate } from "react-router-dom";
-import { connectSocket, sendMessage, checkSocket } from "./WebSocketConnect";
+import { connectSocket, getUserId, sendMessage, checkSocket } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
+import { getAllNoteNames as loadNotes } from "./api";
 import './NoteList.css'
 
 type Note = {
@@ -73,9 +74,37 @@ function NotePage() {
 	
 	function loadList() {
 
-		const noteList: Note[] = [];
+		const userID = getUserId();
 		
 		//Get list from server
+		if (userID) {
+			loadNotes({ userID }).then((response) => {
+				
+				if (response.notes) {
+					// TODO: Implement actual decryption logic here when integrated with crypto/lockinCrypto.ts
+					// For now, assuming names are plaintext or handling them as is
+					
+					const fetchedNotes = response.notes.map((n: any) : Note => ({
+						name: n.note_title, // This might be encrypted, currently showing raw
+						modified: n.date,
+						made: n.date, // Server only returns one date for now
+						pinned: n.pinned,
+						client: false // From server
+					}));
+					
+					loadListAfterServer(fetchedNotes);
+				}
+			}).catch(err => {
+				console.error("Failed to load notes:", err);
+				// Fallback to socket or empty list
+			});
+		} else {
+			// Fallback if no user ID (waiting for socket/login)
+			console.log("No user ID available for API call");
+		}
+
+		/* 
+		// Old Socket Code - kept for reference or fallback
 		if (checkSocket()) {
 			sendMessage(JSON.stringify({
 				command: "GetList"
@@ -84,7 +113,8 @@ function NotePage() {
 			// TODO: Code doesn't reach here, you might know why
 
 			loadListAfterServer(noteList);
-		}
+		 }
+		*/
 	  
 	}
 

@@ -1,5 +1,3 @@
-
-
 let socket : WebSocket | null = null;
 let currentListener: ((data: any) => void) | null = null;
 let userId: string | null = null;

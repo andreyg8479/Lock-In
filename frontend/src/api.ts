@@ -38,8 +38,12 @@ export async function requestLogin(payload: any) {
     return request("POST", "/api/auth/login", payload);
 }
 
-export async function getAllNoteNames() {
-    return request("GET", "/api/vault/fileNames");
+export async function getAllNoteNames(payload?: any) {
+    return request("POST", "/api/vault/fileNames", payload);
+}
+
+export async function requestAllNoteNames(payload: any) {
+    return request("POST", "/api/vault/fileNames", payload);
 }
 
 export async function getNote(id: string) {
