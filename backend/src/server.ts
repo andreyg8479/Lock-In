@@ -231,26 +231,7 @@ wss.on("connection", (socket) => {
 					//update node last update time 
 				break;
                 case "NewNote":
-					const { data, error } = await supabase.from('notes').insert([{ 
-						note_title: recieved.name, 
-						note_text: recieved.data, 
-						pinned: recieved.pinned, 
-						date: new Date().toISOString() }]);
-
-					if (error) {
-
-						socket.send(JSON.stringify({
-							got: "NewNote",
-							result: "Error: " + error.message
-						  }));
-						  return;
-					}
-
-					socket.send(JSON.stringify({
-						got: "NewNote",
-						result: "Note Created",
-
-					}));
+					
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich
