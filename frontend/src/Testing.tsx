@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react' //useState can also be added here but idk if its needed
-import { connectSocket, sendMessage, setAuthToken } from "./WebSocketConnect";
+import { connectSocket, sendMessage } from "./WebSocketConnect";
 
 function Testing() {
   
@@ -12,15 +12,10 @@ function Testing() {
 		});
 		
 	}, [])
-	
-	function clicked() {
-		sendMessage("Test Message");
-		setAuthToken("Testing Token");
-	}
 
   return (
 	<div>
-		<button onClick={clicked}>
+		<button onClick={() => sendMessage("Test Message")}>
 		Send Hello
       </button>
 	</div>

@@ -38,22 +38,10 @@ export async function requestLogin(payload: any) {
     return request("POST", "/api/auth/login", payload);
 }
 
-export async function getAllNoteNames(payload?: any) {
-    return request("POST", "/api/vault/fileNames", payload);
-}
-
-export async function requestAllNoteNames(payload: any) {
-    return request("POST", "/api/vault/fileNames", payload);
+export async function getAllNoteNames(id: string) {
+    return request("GET", '/api/vault/fileNames/${id}');
 }
 
 export async function getNote(id: string) {
     return request("GET", `/api/vault/file/${id}`);
-}
-
-export async function updateNote(id: string) {
-    return request("PUT", `/api/vault/file/${id}`);
-}
-
-export async function requestDeleteAccount(payload: any) {
-    return request("DELETE", "/api/auth/account", payload);
 }

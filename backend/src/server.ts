@@ -22,7 +22,7 @@ const supabase = createClient(url, key);
 // Note: This WS stuff is legacy code because we switched to a RESTful API
 const PORT = process.env.PORT || 8080;
 
-import { handleSignup, handleLogin, deleteAccount } from "./controllers/AuthController";
+import { handleSignup, handleLogin } from "./controllers/AuthController";
 import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote } from "./controllers/VaultController";
 
 // RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
@@ -37,14 +37,11 @@ app.use(express.json())
 app.post("/api/auth/signup", handleSignup);
 app.post("/api/auth/login", handleLogin);
 
-app.post("/api/vault/fileNames", getAllNoteNames); // Changed to post to accept body easily
+app.get("/api/vault/fileNames", getAllNoteNames);
 app.get("/api/vault/file", getNote);
 app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);
-app.put("/api/vault/file", updateNote); // Legacy support
-app.put("/api/vault/file/:noteId", updateNote); // New support for ID-based updates
-
-app.delete("/api/auth/account", deleteAccount);
+app.put("/api/vault/file", updateNote);
 
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");
@@ -111,7 +108,22 @@ app.use((req, res) => {
   });
 });
 
+app.post('/api/delete', async (req, res) => {
 
+	const { username } = req.body;
+	
+	const { data, error } = await supabase
+	.from('users')
+	.delete()
+	.eq('username', username); 
+
+	if (error) {
+		return res.status(400).json({ error: error.message });
+	  }
+	
+	res.json({ ok: true });
+
+});
 
 // this creates an http server
 const server = http.createServer(app);
@@ -165,9 +177,45 @@ wss.on("connection", (socket) => {
 					}));
 					
 				break;
-				case "GetNote":			
+				case "GetNote":
+				
 					
 					
+					//get note from database
+					const { data: notes, error: noteError } = await supabase
+                           .from('notes')
+                           .select('*')                // get all columns in the row
+                           .eq('note_title', recieved.noteName)
+                           .order('date', { ascending: false })
+                                                       
+					if (noteError) {
+						socket.send(JSON.stringify({
+							got: "NoteForEdit",
+							result: "Error: " + noteError.message
+						}));
+						return;
+					}
+
+					if (!notes || notes.length === 0) {
+						// no rows returned
+						socket.send(JSON.stringify({
+						  got: "NoteForEdit",
+						  result: "No note found with that title",
+						}));
+						break; // or return
+					  }
+					  
+					  const note = notes[0];
+					  // use note.note_text, note.pinned, etc.
+					
+					socket.send(JSON.stringify({
+						got: "NoteForEdit",
+						noteData: note.note_text,
+						pinned: note.pinned,
+						noteName: note.note_title,
+						date: note.date
+
+					}));
 					
 				break;
 				case "Override":
@@ -183,7 +231,26 @@ wss.on("connection", (socket) => {
 					//update node last update time 
 				break;
                 case "NewNote":
-					
+					const { data, error } = await supabase.from('notes').insert([{ 
+						note_title: recieved.name, 
+						note_text: recieved.data, 
+						pinned: recieved.pinned, 
+						date: new Date().toISOString() }]);
+
+					if (error) {
+
+						socket.send(JSON.stringify({
+							got: "NewNote",
+							result: "Error: " + error.message
+						  }));
+						  return;
+					}
+
+					socket.send(JSON.stringify({
+						got: "NewNote",
+						result: "Note Created",
+
+					}));
 				default:
 					console.log("ERROR: Someone is in an undefined standard command");	
 			} //end standard swtich

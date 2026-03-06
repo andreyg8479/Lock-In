@@ -44,17 +44,12 @@ const SignUp: React.FC = () => {
 			
 			// Step 2: Send HTTP request to server
 			await requestSignup(cryptoResult.payload);
-			
-			alert("Warning: If you forget your password, your data will be UNRECOVERAVBLE");
 
-			// Step 3: Navigate to home
-			navigate("/");
+			// Step 3: Navigate to noteEdit page
+			navigate("/noteEdit");
 
 		} catch (e) {
 			console.log(String(e));
-			if (String(e) == "Error: {\"error\":\"Username already exists\"}") {
-				alert("This username is already taken, please choose something else.");
-			}
 		}
 	};
 

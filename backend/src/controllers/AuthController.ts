@@ -22,19 +22,6 @@ export async function handleSignup(req: Request, res: Response) {
             return res.status(400).json({ error: "Missing signup information"});
         }
 
-        //if username already exists, return error
-        const { data: existingUser, error: existingUserError } = await supabase
-            .from("users")
-            .select("*")
-            .eq("username", username)
-            .single();
-            
-        if (existingUser) {
-            return res.status(400).json({ error: "Username already exists"});
-        }
-
-            
-
         const { data, error } = await supabase
             .from("users")
             .insert([
@@ -105,19 +92,5 @@ export async function handleLogin(req: Request, res: Response) {
         console.log("Login error in backend/src/controllers/AuthController.ts", e);
         return res.status(500).json({ error: "Internal server error"});
     }
-
-}
-
-export async function deleteAccount(req: Request, res: Response) {
-
-    const { username } = req.body;
-	
-	const { data, error } = await supabase
-	.from('users')
-	.delete()
-	.eq('username', username); 
-	
-	return res.status(201).json({ ok: true });
-
 
 }

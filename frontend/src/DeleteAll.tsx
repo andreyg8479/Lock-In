@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from 'react' //useState can also be added here but idk if its needed
+import { connectSocket, sendMessage } from "./WebSocketConnect";
 import { useNavigate } from "react-router-dom";
-import { requestDeleteAccount } from './api';
 import './DeleteAll.css'
 
 function DeleteAll() {
@@ -10,28 +11,23 @@ function DeleteAll() {
   
 	useEffect(() => {
 		
+		connectSocket((data) => {
+			console.log("Got data");
+			console.log(data);
+		});
+		
 	}, [])
 	
 	const handleBack = () => {
 		navigate("/");
 	  };
 
-	  const handleDelete = async () => {
+	  const handleDelete = () => {
 		if (!confirming) {
 			setConfirming(true);
 		} else {
-			
-			// TODO: replace with actual user information
-			const username = "testuser";
-			
-			try {
-				await requestDeleteAccount({ username }); // Call backend API
-				alert("Account deleted successfully");
-				navigate("/"); // Redirect to home/login
-			} catch (error) {
-				console.error("Delete failed:", error);
-				alert("Failed to delete account");
-			}
+			sendMessage("Delete All");
+			alert("Delete everything triggered");
 			setConfirming(false);
 		}
 	  };
