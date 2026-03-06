@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { supabase } from "../supabaseClient";
-import { getUserId } from "../utils/auth";
 
 export async function getAllNoteNames(req: Request, res: Response) {
     const { userID } = req.body; 
@@ -56,7 +55,8 @@ export async function uploadNote(req: Request, res: Response) {
         note_title: req.body.name, 
         note_text: req.body.data, 
         pinned: req.body.pinned,
-        user_id: getUserId(req) }]);
+        user_id: req.body.user_id
+    }]);
 
     // generic error
     if (error) {
