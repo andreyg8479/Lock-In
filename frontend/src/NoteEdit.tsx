@@ -15,6 +15,8 @@ function noteEdit() {
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
 	const [content, setContent] = useState("");
+	
+	const [confirming, setConfirming] = useState(false);
   
 	useEffect(() => {
 	
@@ -102,14 +104,18 @@ function noteEdit() {
 	}
 	
 	const doDelete = () => {
-		if (!ogNoteName) { //if its a note thats been saved before
-			//also make sure the name changing is accounted for
-			sendMessage(JSON.stringify({
-				command: "DeleteNote",
-				name: ogNoteName
-			}));
+		if (!confirming) {
+			setConfirming(true);
+		} else {
+			if (!ogNoteName) { //if its a note thats been saved before
+				//also make sure the name changing is accounted for
+				sendMessage(JSON.stringify({
+					command: "DeleteNote",
+					name: ogNoteName
+				}));
+			}
+			doCancel();
 		}
-		doCancel();
 	}
 
   return (
@@ -145,7 +151,7 @@ function noteEdit() {
 			</button>
 			
 			<button onClick={doDelete}>
-			Delete
+			{confirming ? "Positive?" : "Delete"}
 			</button>
 			
 			{/* more buttons probably */}
