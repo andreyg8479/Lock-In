@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react' //useState can also be added here bu
 import { useNavigate } from "react-router-dom";
 import { requestDeleteAccount } from './api';
 import './DeleteAll.css'
+import { getUsername } from './WebSocketConnect';
 
 function DeleteAll() {
 
@@ -21,9 +22,8 @@ function DeleteAll() {
 			setConfirming(true);
 		} else {
 			
-			// TODO: replace with actual user information
-			const username = "testuser";
-			
+			const username = getUsername();
+
 			try {
 				await requestDeleteAccount({ username }); // Call backend API
 				alert("Account deleted successfully");
