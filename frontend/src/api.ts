@@ -46,12 +46,20 @@ export async function requestAllNoteNames(payload: any) {
     return request("POST", "/api/vault/fileNames", payload);
 }
 
-export async function getNote(id: string) {
-    return request("GET", `/api/vault/file/${id}`);
+export async function getNote(payload: any) {
+    return request("POST", "/api/vault/get", payload);
 }
 
-export async function updateNote(id: string) {
-    return request("PUT", `/api/vault/file/${id}`);
+export async function uploadNote(payload: any) {
+    return request("POST", "/api/vault/file", payload);
+}
+
+export async function updateNote(payload: any) {
+    return request("PUT", "/api/vault/file", payload);
+}
+
+export async function deleteNote(payload: any) {
+    return request("DELETE", "/api/vault/file", payload);
 }
 
 export async function requestDeleteAccount(payload: any) {

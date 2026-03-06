@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { connectSocket, sendMessage, getUserId, getAuthToken } from "./WebSocketConnect";
+import { getUserId } from "./WebSocketConnect";
 import { useLocation, useNavigate } from "react-router-dom";
+import { getNote, uploadNote, updateNote, deleteNote } from "./api"; // Import API functions
 import './NoteEdit.css'
 
-function noteEdit() {
+function NoteEdit() {
 
 	const navigate = useNavigate();
 	
@@ -11,8 +12,7 @@ function noteEdit() {
 	const location = useLocation();
 	const ogNoteName = location.state?.noteName;
 	
-	const [noteId, setNoteId] = useState(null);
-	
+	const [noteId, setNoteId] = useState<string | null>(null);
 	const [pinned, setPinned] = useState(false);
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
@@ -27,75 +27,86 @@ function noteEdit() {
 		  window.history.replaceState({}, document.title);
 		}
 		
-		connectSocket((data) => {
-			if (typeof data === "object") {	
-					
-				if (data.got === "NoteForEdit") {
-				
-					setContent(data.noteData);
-					
-					setPinned(data.pinned);
-					
-					setNoteId(data.id);
-					
-					console.log("Id: ", noteId);
-					
+		const fetchNote = async () => {
+			if (ogNoteName) {
+				const userID = getUserId();
+				if (!userID) {
+					console.error("User ID missing");
+					return;
 				}
-				
-			} else {			
-				console.log("Received:", data);
+
+				try {
+					console.log("Requesting Note via API");
+					// The controller expects { noteName: string } in req.body.
+					// We pass userID as well if needed in future auth checks
+					// VaultController.ts:getNote uses req.body.noteName
+					const response = await getNote({ noteName: ogNoteName, userID });
+					
+					// VaultController.ts:getNote returns { note: notes } where 'notes' is likely an array from supabase.select('*')
+					if (response.note && response.note.length > 0) {
+						const noteData = response.note[0];
+						
+						// Map database columns to state
+						// DB columns based on VaultController.ts: 'note_text', 'pinned', 'id'
+						setContent(noteData.note_text);
+						setPinned(noteData.pinned);
+						setNoteId(noteData.id);
+						
+						console.log("Loaded Note Id: ", noteData.id);
+					}
+				} catch (error) {
+					console.error("Error fetching note:", error);
+				}
+			} else {
+				console.log("no note selected, want to make new note");
 			}
-		});
+		};
+
+		fetchNote();
 		
-		if (!ogNoteName) {
-			console.log("no note selected, want to make new note")
-		} else { //load the new note
-		
-			if (true) { //if its a server note
-			
-				console.log("Requesting Note");
-			
-				sendMessage(JSON.stringify({
-					command: "GetNote",
-					noteName: ogNoteName
-				}));
-			
-			} // else if its a client note
-		
-		}
-		
-	}, [])
+	}, [ogNoteName])
 	
 
 	
-	const doSaveServer = () => {
-		const noteName = title; 
-		const noteData = content; //these should be encrypted before sending
-		
-		console.log(getUserId());
-		console.log(getAuthToken());
-		
-		if (noteId == null) { //if its a newly made note vs editing old note
-			sendMessage(JSON.stringify({
-				command: "NewNote",
-				name: noteName,
-				pinned: pinned,
-				data: noteData
-			}));
-		} else {
-			sendMessage(JSON.stringify({
-				command: "Override",
-				name: ogNoteName,
-				id: noteId,
-				newName: noteName,
-				pinned: pinned,
-				data: noteData
-			}));
+	const doSaveServer = async () => {
+		const userID = getUserId();
+		if (!userID) {
+			console.log("Not logged in"); 
+			return;
+		}
+
+		try {
+			if (noteId == null) { 
+				// Create New Note
+				console.log("Creating new note...");
+				await uploadNote({
+					name: title,
+					data: content,
+					pinned: pinned,
+					user_id: userID
+				});
+				alert("Note Created!");
+				navigate("/NoteList");
+			} else {
+				// Update Existing Note
+				console.log("Updating note...");
+				await updateNote({
+					noteId: noteId,
+					name: title, 
+					data: content,
+					pinned: pinned
+				});
+				alert("Note Updated!");
+			}
+		} catch (error) {
+			console.error("Save failed:", error);
+			alert("Failed to save note.");
 		}
 	}
 	
 	const doSaveClient = () => {
-	
+		// saving to client is sprint 2 problem
+		console.log("Save to client is sprint 2 problem");
 	}
 	
 	const togglePin = () => {
@@ -109,19 +120,25 @@ function noteEdit() {
 	const attachFile = () => {
 		//Not a this week problem
 	}
+
+	const doCancel = () => {
+		setConfirming(false);
+	}
 	
-	const doDelete = () => {
+	const doDelete = async () => {
 		if (!confirming) {
 			setConfirming(true);
 		} else {
-			if (!ogNoteName) { //if its a note thats been saved before
-				//also make sure the name changing is accounted for
-				sendMessage(JSON.stringify({
-					command: "DeleteNote",
-					name: ogNoteName
-				}));
+			try {
+				// VaultController deleteNote expects { note_title: string }
+				if (title) { 
+					await deleteNote({ note_title: title });
+					navigate("/NoteList");
+				}
+			} catch (error) {
+				console.error("Delete failed:", error);
 			}
-			doCancel();
+			setConfirming(false);
 		}
 	}
 
@@ -161,6 +178,9 @@ function noteEdit() {
 			{confirming ? "Positive?" : "Delete"}
 			</button>
 			
+			{confirming && (
+				<button onClick={doCancel}>Cancel</button>
+			)}
 			{/* more buttons probably */}
 			
 			
@@ -178,4 +198,4 @@ function noteEdit() {
   )
 }
 
-export default noteEdit;
+export default NoteEdit;
