@@ -101,8 +101,8 @@ function NotePage() {
 
 					const fetchedNotes = response.notes.map((n: any, index: number) : Note => ({
 						name: noteNames[index], 
-						modified: n.date,
-						made: n.date, // Server only returns one date for now
+						modified: n.updated_at,
+						made: n.created_at, // Server only returns one date for now
 						pinned: n.pinned,
 						client: false // From server
 					}));
