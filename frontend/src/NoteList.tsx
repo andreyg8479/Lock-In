@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate } from "react-router-dom";
-import { connectSocket, getUserId, sendMessage, checkSocket } from "./WebSocketConnect";
+import { connectSocket, getUserId, sendMessage, checkSocket, getAuthToken } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
+import { decryptFilenames } from "./crypto/lockinCrypto";
 import './NoteList.css'
 
 type Note = {
@@ -72,20 +73,34 @@ function NotePage() {
 		
 	}, [])
 	
-	function loadList() {
+	async function loadList() {
 
 		const userID = getUserId();
+		const vaultKey = getAuthToken();
 		
 		//Get list from server
 		if (userID) {
-			loadNotes({ userID }).then((response) => {
+			try {
+				const response = await loadNotes({ userID });
 				
 				if (response.notes) {
-					// TODO: Implement actual decryption logic here when integrated with crypto/lockinCrypto.ts
-					// For now, assuming names are plaintext or handling them as is
 					
-					const fetchedNotes = response.notes.map((n: any) : Note => ({
-						name: n.note_title, // This might be encrypted, currently showing raw
+					let noteNames = response.notes.map((n: any) => n.note_title);
+					
+					// If we have the key, decrypt. Else show raw (or placeholder)
+					if (vaultKey) {
+						try {
+							// decryptFilenames expects string[], returns Promise<string[]>
+							// This assumes n.note_title is the encrypted base64 string
+							const decrypted = await decryptFilenames(noteNames, vaultKey);
+							noteNames = decrypted;
+						} catch (e) {
+							console.error("Decryption error:", e);
+						}
+					}
+
+					const fetchedNotes = response.notes.map((n: any, index: number) : Note => ({
+						name: noteNames[index], 
 						modified: n.date,
 						made: n.date, // Server only returns one date for now
 						pinned: n.pinned,
@@ -94,28 +109,14 @@ function NotePage() {
 					
 					loadListAfterServer(fetchedNotes);
 				}
-			}).catch(err => {
+			} catch (err) {
 				console.error("Failed to load notes:", err);
 				// Fallback to socket or empty list
-			});
+			}
 		} else {
 			// Fallback if no user ID (waiting for socket/login)
 			console.log("No user ID available for API call");
 		}
-
-		/* 
-		// Old Socket Code - kept for reference or fallback
-		if (checkSocket()) {
-			sendMessage(JSON.stringify({
-				command: "GetList"
-			}));
-		} else {
-			// TODO: Code doesn't reach here, you might know why
-
-			loadListAfterServer(noteList);
-		 }
-		*/
-	  
 	}
 
 	function loadListAfterServer(notes: NoteForSort[], term = searchTerm, sort = sortBy) {
