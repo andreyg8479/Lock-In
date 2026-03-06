@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate } from "react-router-dom";
 import { connectSocket, getUserId, sendMessage, checkSocket, getAuthToken } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
-import { getAllNoteNames } from "./api";
+import { getAllNoteNames as loadNotes } from "./api";
 import { decryptFilenames } from "./crypto/lockinCrypto";
 import './NoteList.css'
 
@@ -81,7 +81,7 @@ function NotePage() {
 		//Get list from server
 		if (userID) {
 			try {
-				const response = await getAllNoteNames(userID);
+				const response = await loadNotes({ userID });
 				
 				if (response.notes) {
 					
@@ -214,3 +214,4 @@ function NotePage() {
 }
 
 export default NotePage;
+

@@ -4,9 +4,9 @@ export type EncryptedNote = {
     encryptedName: string,
     ciphertextB64: string,
     ivB64: string,
-    pinned: boolean
-    created_at: Date,
-    modified_at: Date
+    pinned: boolean,
+    lastModified: string,
+    createdAt: string
 };
 
 export type DecryptedNote = {
@@ -15,7 +15,7 @@ export type DecryptedNote = {
     name: string,
     plaintext: string,
     ivB64: string,
-    pinned: boolean
-    created_at: Date,
-    modified_at: Date
+    pinned: boolean,
+    lastModified: string,
+    createdAt: string
 };

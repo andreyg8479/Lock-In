@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { connectSocket, sendMessage } from "./WebSocketConnect";
+import { connectSocket, sendMessage, getUserId, getAuthToken } from "./WebSocketConnect";
 import { useLocation, useNavigate } from "react-router-dom";
 import './NoteEdit.css'
 
@@ -64,6 +64,9 @@ function noteEdit() {
 		const noteName = title; 
 		const noteData = content; //these should be encrypted before sending
 		
+		console.log(getUserId());
+		console.log(getAuthToken());
+		
 		if (!ogNoteName) { //if its a newly made note vs editing old note
 			sendMessage(JSON.stringify({
 				command: "NewNote",
@@ -90,7 +93,7 @@ function noteEdit() {
 		setPinned(!pinned);
 	}
 	
-	const doCancel = () => {
+	const doBack = () => {
 		navigate("/NoteList");
 	}
 	
@@ -99,7 +102,7 @@ function noteEdit() {
 	}
 	
 	const doDelete = () => {
-		if (true) { //if its a note thats been saved before
+		if (!ogNoteName) { //if its a note thats been saved before
 			//also make sure the name changing is accounted for
 			sendMessage(JSON.stringify({
 				command: "DeleteNote",
@@ -121,8 +124,8 @@ function noteEdit() {
 	
 		<div className="buttons">
 		
-			<button onClick={doCancel}>
-			Cancel
+			<button onClick={doBack}>
+			Back
 			</button>
 			
 			<button onClick={doSaveServer}>
