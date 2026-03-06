@@ -65,3 +65,7 @@ export async function deleteNote(payload: any) {
 export async function requestDeleteAccount(payload: any) {
     return request("DELETE", "/api/auth/account", payload);
 }
+
+export async function uploadNote(payload: any) {
+    return request("POST", "/api/vault/file", payload);
+}
