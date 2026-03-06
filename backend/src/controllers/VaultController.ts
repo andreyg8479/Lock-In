@@ -55,7 +55,9 @@ export async function uploadNote(req: Request, res: Response) {
         note_title: req.body.name, 
         note_text: req.body.data, 
         pinned: req.body.pinned,
-        user_id: req.body.user_id
+        user_id: req.body.user_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
     }]);
 
     // generic error
