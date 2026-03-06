@@ -86,7 +86,7 @@ export async function updateNote(req: Request, res: Response) {
         note_text: req.body.data,
         pinned: req.body.pinned,
         updated_at: new Date().toISOString()
-    }).eq('note_title', req.body.name);
+    }).eq('id', req.body.noteId);
 
     if (error) {
         return res.status(400).json({ error: error.message });
