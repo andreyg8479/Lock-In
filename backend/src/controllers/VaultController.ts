@@ -11,7 +11,7 @@ export async function getAllNoteNames(req: Request, res: Response) {
 
     const { data: notes, error } = await supabase
         .from('notes')
-        .select('id, note_title, pinned, created_at')
+        .select('id, note_title, pinned, created_at, updated_at')
         .eq('user_id', userID)
         .order('created_at', { ascending: false });
 
