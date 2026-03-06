@@ -11,6 +11,8 @@ function noteEdit() {
 	const location = useLocation();
 	const ogNoteName = location.state?.noteName;
 	
+	const [noteId, setNoteId] = useState(null);
+	
 	const [pinned, setPinned] = useState(false);
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
@@ -33,6 +35,10 @@ function noteEdit() {
 					setContent(data.noteData);
 					
 					setPinned(data.pinned);
+					
+					setNoteId(data.id);
+					
+					console.log("Id: ", noteId);
 					
 				}
 				
@@ -69,7 +75,7 @@ function noteEdit() {
 		console.log(getUserId());
 		console.log(getAuthToken());
 		
-		if (!ogNoteName) { //if its a newly made note vs editing old note
+		if (noteId == null) { //if its a newly made note vs editing old note
 			sendMessage(JSON.stringify({
 				command: "NewNote",
 				name: noteName,
@@ -80,6 +86,7 @@ function noteEdit() {
 			sendMessage(JSON.stringify({
 				command: "Override",
 				name: ogNoteName,
+				id: noteId
 				newName: noteName,
 				pinned: pinned,
 				data: noteData
