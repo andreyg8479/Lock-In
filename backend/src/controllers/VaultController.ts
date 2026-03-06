@@ -12,7 +12,7 @@ export async function getAllNoteNames(req: Request, res: Response) {
     const { data: notes, error } = await supabase
         .from('notes')
         .select('id, note_title, pinned, date')
-        .eq('user_id', userID)
+        //.eq('user_id', userID) <--- This column apparently doesn't exist yet in the DB
         .order('date', { ascending: false });
 
     if (error) {
