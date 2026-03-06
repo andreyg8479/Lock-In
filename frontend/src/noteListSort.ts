@@ -13,11 +13,11 @@ function compareName(a: NoteForSort, b: NoteForSort): number {
 }
 
 function compareModified(a: NoteForSort, b: NoteForSort): number {
-  return new Date(b.modified).getTime() - new Date(a.modified).getTime();
+  return new Date(b.made).getTime() - new Date(a.made).getTime();
 }
 
 function compareCreated(a: NoteForSort, b: NoteForSort): number {
-  return new Date(b.made).getTime() - new Date(a.made).getTime();
+  return new Date(b.modified).getTime() - new Date(a.modified).getTime();
 }
 
 export function sortNotes(
