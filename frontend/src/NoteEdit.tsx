@@ -86,7 +86,7 @@ function noteEdit() {
 			sendMessage(JSON.stringify({
 				command: "Override",
 				name: ogNoteName,
-				id: noteId
+				id: noteId,
 				newName: noteName,
 				pinned: pinned,
 				data: noteData
