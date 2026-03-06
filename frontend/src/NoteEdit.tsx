@@ -42,6 +42,8 @@ function NoteEdit() {
 					// VaultController.ts:getNote uses req.body.noteName
 					const response = await getNote({ noteName: ogNoteName, userID });
 					
+					console.log("RAW RESPONSE FROM SERVER:", response);
+
 					// VaultController.ts:getNote returns { note: notes } where 'notes' is likely an array from supabase.select('*')
 					if (response.note && response.note.length > 0) {
 						const noteData = response.note[0];

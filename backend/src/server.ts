@@ -38,11 +38,11 @@ app.post("/api/auth/signup", handleSignup);
 app.post("/api/auth/login", handleLogin);
 
 app.post("/api/vault/fileNames", getAllNoteNames); // Changed to post to accept body easily
-app.get("/api/vault/file", getNote);
+app.post("/api/vault/get", getNote);
 app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);
-app.put("/api/vault/file", updateNote); // Legacy support
-app.put("/api/vault/file/:noteId", updateNote); // New support for ID-based updates
+app.put("/api/vault/file", updateNote);
+app.put("/api/vault/file/:noteId", updateNote);
 
 app.delete("/api/auth/account", deleteAccount);
 

@@ -28,11 +28,19 @@ export async function getAllNoteNames(req: Request, res: Response) {
 
 export async function getNote(req: Request, res: Response) {
 
+    // Expecting both noteName and userID in the request body for specific retrieval
+    const { noteName, userID } = req.body;
+
+    if (!noteName || !userID) {
+         return res.status(400).json({ error: "Both noteName and userID are required" });
+    }
+
     const { data: notes, error: noteError } = await supabase
                            .from('notes')
                            .select('*')                // get all columns in the row
-                           .eq('note_title', req.body.noteName)
-                           .order('created_at', { ascending: false })
+                           .eq('note_title', noteName)
+                           .eq('user_id', userID)      // Ensure we only get the note for this user
+                           .order('updated_at', { ascending: false }); // get latest version if duplicates exist
            
     // generic error
     if (noteError) {
@@ -71,7 +79,12 @@ export async function uploadNote(req: Request, res: Response) {
 // handles any update to the note itself, i.e.
 // if the request is to pin/unpin, to update note content, to update note name etc
 export async function updateNote(req: Request, res: Response) {
-    const { noteId } = req.params;
+    let { noteId } = req.params;
+    // Check body for noteId if not in params
+    if (!noteId && req.body.noteId) {
+        noteId = req.body.noteId;
+    }
+
     const { name, data: content, pinned } = req.body;
 
     // Build the updates object dynamically
