@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabase } from "../supabaseClient";
+import { getUserId } from "../utils/auth";
 
 export async function getAllNoteNames(req: Request, res: Response) {
     const { userID } = req.body; 
@@ -11,9 +12,9 @@ export async function getAllNoteNames(req: Request, res: Response) {
 
     const { data: notes, error } = await supabase
         .from('notes')
-        .select('id, note_title, pinned, created_at')
+        .select('id, note_title, pinned, date')
         .eq('user_id', userID)
-        .order('created_at', { ascending: false });
+        .order('date', { ascending: false });
 
     if (error) {
         return res.status(400).json({ error: error.message });
@@ -32,7 +33,7 @@ export async function getNote(req: Request, res: Response) {
                            .from('notes')
                            .select('*')                // get all columns in the row
                            .eq('note_title', req.body.noteName)
-                           .order('created_at', { ascending: false })
+                           .order('date', { ascending: false })
            
     // generic error
     if (noteError) {
@@ -54,8 +55,8 @@ export async function uploadNote(req: Request, res: Response) {
     const { data, error } = await supabase.from('notes').insert([{ 
         note_title: req.body.name, 
         note_text: req.body.data, 
-        pinned: req.body.pinned, 
-        updated_at: new Date().toISOString() }]);
+        pinned: req.body.pinned,
+        user_id: getUserId(req) }]);
 
     // generic error
     if (error) {
@@ -75,7 +76,7 @@ export async function updateNote(req: Request, res: Response) {
 
     // Build the updates object dynamically
     const updates: any = {
-        updated_at: new Date().toISOString()
+        date: new Date().toISOString()
     };
 
     if (name !== undefined) updates.note_title = name;
