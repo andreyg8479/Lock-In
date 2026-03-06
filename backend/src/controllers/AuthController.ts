@@ -85,7 +85,7 @@ export async function handleLogin(req: Request, res: Response) {
         // Step 3: search DB for the associated email 
         const { data, error } = await supabase
             .from("users")
-            .select("*")
+            .select("id, username, email, kdf, iterations, salt, cipher, iv, aes_key_length, gcm_iv_length, wrapped_master_key, version")
             .eq("email", email)
             .single();
 

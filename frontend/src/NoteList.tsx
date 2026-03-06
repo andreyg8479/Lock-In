@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { connectSocket, getUserId, sendMessage, checkSocket, getAuthToken } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
-import { decryptFilenames } from "./crypto/lockinCrypto";
+// import { decryptFilenames } from "./crypto/lockinCrypto";
 import './NoteList.css'
 
 type Note = {
@@ -87,7 +87,10 @@ function NotePage() {
 					
 					let noteNames = response.notes.map((n: any) => n.note_title);
 					
-					// If we have the key, decrypt. Else show raw (or placeholder)
+					// dont worry about encrypting/decrypting anthing for now
+
+					
+					/* If we have the key, decrypt. Else show raw (or placeholder)
 					if (vaultKey) {
 						try {
 							// decryptFilenames expects string[], returns Promise<string[]>
@@ -97,7 +100,7 @@ function NotePage() {
 						} catch (e) {
 							console.error("Decryption error:", e);
 						}
-					}
+					} */
 
 					const fetchedNotes = response.notes.map((n: any, index: number) : Note => ({
 						name: noteNames[index], 

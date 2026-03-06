@@ -55,7 +55,7 @@ export type OutgoingLoginData =
   | {
       ok: true;
       payload: {
-        vaultKey: Uint8Array;
+        vaultKey: CryptoKey;
       };
     }
   | {
@@ -147,10 +147,19 @@ export async function handleLogin(data: IncomingLoginData): Promise<OutgoingLogi
             toArrayBuffer(wrappedMasterKey)
         );
 
+        // Convert raw bytes back to CryptoKey
+        const vaultKey = await window.crypto.subtle.importKey(
+            "raw", 
+            vaultKeyBuffer,
+            "AES-GCM", 
+            true, 
+            ["encrypt", "decrypt"]
+        );
+
         return {
             ok: true,
             payload: {
-                vaultKey: new Uint8Array(vaultKeyBuffer)
+                vaultKey: vaultKey
             }
         };
 
