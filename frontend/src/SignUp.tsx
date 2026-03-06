@@ -52,6 +52,9 @@ const SignUp: React.FC = () => {
 
 		} catch (e) {
 			console.log(String(e));
+			if (String(e) == "Error: {\"error\":\"Username already exists\"}") {
+				alert("This username is already taken, please choose something else.");
+			}
 		}
 	};
 
