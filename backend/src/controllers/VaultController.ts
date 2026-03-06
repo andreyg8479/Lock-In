@@ -11,9 +11,9 @@ export async function getAllNoteNames(req: Request, res: Response) {
 
     const { data: notes, error } = await supabase
         .from('notes')
-        .select('id, note_title, pinned, date')
+        .select('id, note_title, pinned, created_at')
         .eq('user_id', userID)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
     if (error) {
         return res.status(400).json({ error: error.message });
@@ -32,7 +32,7 @@ export async function getNote(req: Request, res: Response) {
                            .from('notes')
                            .select('*')                // get all columns in the row
                            .eq('note_title', req.body.noteName)
-                           .order('date', { ascending: false })
+                           .order('created_at', { ascending: false })
            
     // generic error
     if (noteError) {
@@ -55,7 +55,7 @@ export async function uploadNote(req: Request, res: Response) {
         note_title: req.body.name, 
         note_text: req.body.data, 
         pinned: req.body.pinned, 
-        date: new Date().toISOString() }]);
+        updated_at: new Date().toISOString() }]);
 
     // generic error
     if (error) {
@@ -75,7 +75,7 @@ export async function updateNote(req: Request, res: Response) {
 
     // Build the updates object dynamically
     const updates: any = {
-        date: new Date().toISOString()
+        updated_at: new Date().toISOString()
     };
 
     if (name !== undefined) updates.note_title = name;
