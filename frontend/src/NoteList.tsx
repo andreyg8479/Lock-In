@@ -150,6 +150,9 @@ function NotePage() {
 			
 			const name = document.createElement("span");
 			name.textContent = note.name;
+			if (note.pinned) {
+				name.textContent = "📌" + note.name;
+			}
 			item.appendChild(name);
 			
 			const editButton = document.createElement("button");
