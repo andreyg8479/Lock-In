@@ -72,6 +72,50 @@ function NotePage() {
 		
 		
 	}, [])
+
+
+	useEffect(() => {
+
+		// interval to load list every 10 seconds when the page is visible
+
+		let interval: ReturnType<typeof setInterval> | null = null;
+
+
+		const startInterval = () => {
+			interval = setInterval(() => {
+				loadList();
+			}, 10000);
+		};
+
+		const stopInterval = () => {
+			if (interval !== null) {
+				clearInterval(interval);
+				interval = null;
+			}
+		};
+
+
+		if (document.visibilityState === "visible") {
+			startInterval();
+		}
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				startInterval();
+			} else {
+				stopInterval();
+			}
+		};
+
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			stopInterval();
+		};
+
+	}, []);
+
 	
 	async function loadList() {
 
