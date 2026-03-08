@@ -116,7 +116,12 @@ function NotePage() {
 
 	}, []);
 
-	
+	// Refresh list when sorting mode changes
+	useEffect(() => {
+		loadList();
+	}, [sortBy]);
+
+
 	async function loadList() {
 
 		const userID = getUserId();
