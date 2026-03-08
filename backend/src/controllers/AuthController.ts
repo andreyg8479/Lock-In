@@ -53,6 +53,11 @@ export async function handleSignup(req: Request, res: Response) {
 
         // Something went wrong in the layer between here and DB
         if (error) {
+            const code = (error as any).code;
+            // 23505 is Postgres "unique_violation" – handle concurrent signups gracefully
+            if (code === "23505") {
+                return res.status(400).json({ error: "Username or email already exists"});
+            }
             console.error("Supabase error:", error);
             return res.status(400).json({ error: error.message});
         }

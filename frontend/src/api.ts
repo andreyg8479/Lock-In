@@ -7,15 +7,27 @@ const BASE_URL = "http://localhost:8080";
     Serves as a helper for other API functions after this.
 */
 async function request(method: string, path: string, body?: any) {
-    
-    const response = await fetch(BASE_URL + path,
-    { 
-        method, 
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: body ? JSON.stringify(body) : undefined
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    let response: Response;
+    try {
+        response = await fetch(BASE_URL + path, {
+            method,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: body ? JSON.stringify(body) : undefined,
+            signal: controller.signal
+        });
+    } catch (err: any) {
+        if (err?.name === "AbortError") {
+            throw new Error("Request timed out");
+        }
+        throw err;
+    } finally {
+        clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
     const errorText = await response.text();

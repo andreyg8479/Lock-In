@@ -96,7 +96,8 @@ function NoteEdit() {
 					noteId: noteId,
 					name: title, 
 					data: content,
-					pinned: pinned
+					pinned: pinned,
+					user_id: userID
 				});
 				alert("Note Updated!");
 			}
@@ -132,9 +133,14 @@ function NoteEdit() {
 			setConfirming(true);
 		} else {
 			try {
+                const userID = getUserId();
+                if (!userID) {
+                    console.error("User ID missing");
+                    return;
+                }
 				// VaultController deleteNote expects { note_title: string }
 				if (title) { 
-					await deleteNote({ note_title: title });
+					await deleteNote({ note_title: title, user_id: userID });
 					navigate("/NoteList");
 				}
 			} catch (error) {

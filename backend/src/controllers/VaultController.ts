@@ -59,17 +59,23 @@ export async function getNote(req: Request, res: Response) {
 
 export async function uploadNote(req: Request, res: Response) {
 
-    const { data, error } = await supabase.from('notes').insert([{ 
-        note_title: req.body.name, 
-        note_text: req.body.data, 
-        pinned: req.body.pinned,
-        user_id: req.body.user_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    }]);
+    const { data, error } = await supabase
+        .from('notes')
+        .insert([{
+            note_title: req.body.name,
+            note_text: req.body.data,
+            pinned: req.body.pinned,
+            user_id: req.body.user_id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }]);
 
-    // generic error
     if (error) {
+        const code = (error as any).code;
+        // 23505 is Postgres "unique_violation" – treat concurrent duplicate inserts as idempotent
+        if (code === "23505") {
+            return res.status(200).json({ ok: true, duplicated: true });
+        }
         return res.status(400).json({ error: error.message });
     }
 
@@ -81,12 +87,16 @@ export async function uploadNote(req: Request, res: Response) {
 // handles any update to the note 
 export async function updateNote(req: Request, res: Response) {
 
-    const { data, error } = await supabase.from('notes').update({
-        note_title: req.body.name,
-        note_text: req.body.data,
-        pinned: req.body.pinned,
-        updated_at: new Date().toISOString()
-    }).eq('id', req.body.noteId);
+    const { data, error } = await supabase
+        .from('notes')
+        .update({
+            note_title: req.body.name,
+            note_text: req.body.data,
+            pinned: req.body.pinned,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', req.body.noteId)
+        .eq('user_id', req.body.user_id);
 
     if (error) {
         return res.status(400).json({ error: error.message });
@@ -98,12 +108,16 @@ export async function updateNote(req: Request, res: Response) {
 
 export async function deleteNote(req: Request, res: Response) {
 
-    const { note_title } = req.body;
+    const { note_title, user_id } = req.body;
+    if (!user_id) {
+        return res.status(400).json({ error: "user_id is required" });
+    }
 	
 	const { data, error } = await supabase
 	.from('notes')
 	.delete()
-	.eq('note_title', note_title); 
+	.eq('note_title', note_title)
+    .eq('user_id', user_id); 
 
     // generic error
     if (error) {
