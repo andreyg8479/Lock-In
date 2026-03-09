@@ -7,6 +7,18 @@ import './Settings.css'
 function Settings() {
 
 	const navigate = useNavigate();
+	
+	
+	
+	const [prefSize, setPrefSize] = useState(16);
+	
+	const [key, setKey] = useState("M");
+	const [shift, setShift] = useState(false);
+	const [alt, setAlt] = useState(true);
+	
+	const [theme, setTheme] = useState("light");
+  
+  
   
 	useEffect(() => {
 		
@@ -30,7 +42,7 @@ function Settings() {
 	}
 	
 	function updateChanges() {
-		navigate("/");
+		//make sure the inputs are valid, then send them to the the WebSocketConnect
 	}
 
   return (
@@ -48,20 +60,20 @@ function Settings() {
 		<div className="settings-section">
 		
 			<div className="settings-row">
-Prefered Text Size: 
-				<input type="number" id="pref-text-size" />
+Preferred Text Size: 
+				<input type="number" id="pref-text-size" value={prefSize} onChange={(e) => setPrefSize(Number(e.target.value))}/>
 			</div>
 			
 			<div className="settings-row">
 Hide Screen Keybind: 							&emsp;&emsp;&emsp;
-				<div id="thing"> Reqire Shift: <input type="checkbox" id="shift"/> </div>
-				<div id="thing"> Reqire Alt: <input type="checkbox" id="alt"/> </div>
-				<div id="thing"> Key: <input type="text" id="charInput" maxlength="1" size="1"/> </div>
+				<div id="thing"> Require Shift: <input type="checkbox" id="shift" checked={shift} onChange={(e) => setShift(e.target.checked)}/> </div>
+				<div id="thing"> Require Alt: <input type="checkbox" id="alt" checked={alt} onChange={(e) => setAlt(e.target.checked)}/> </div>
+				<div id="thing"> Key: <input type="text" id="charInput" maxLength="1" size="1" value ={key} onChange={(e) => setKey(e.target.value.toUpperCase())} /> </div>
 			</div>
 			
 			<div className="settings-row">
 Theme:
-				<select id="theme">
+				<select id="theme" value={theme} onChange={(e) => setTheme(e.target.value)}>
 				  <option value="light">Light</option>
 				  <option value="dark">Dark</option>
 				</select>
