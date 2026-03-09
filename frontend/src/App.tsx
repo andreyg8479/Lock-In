@@ -10,6 +10,7 @@ import NoteList from "./NoteList";
 import Login from "./Login";
 import SignUp from "./SignUp";
 import DeleteAll from "./DeleteAll";
+import Settings from "./Settings";
 
 
 
@@ -25,6 +26,7 @@ function PagesList() {
 				<Link to="/SignUp">(SignUp)</Link>
 				<Link to="/Login"> (Login)   </Link>
 				<Link to="/DeleteAll"> (DeleteAll)   </Link>
+				<Link to="/Settings"> (Settings)   </Link>
 				<Link to="/testing">(Testing)</Link>
 			</div>	
 		</div>	
@@ -71,6 +73,7 @@ function App() {
 			<Route path="/NoteEdit" element={<NoteEdit />} />
 			<Route path="/NoteList" element={<NoteList />} />
 			<Route path="/DeleteAll" element={<DeleteAll />} />
+			<Route path="/Settings" element={<Settings />} />
 			<Route path="/testing" element={<Testing />} />
 		</Routes>
 	</Router>

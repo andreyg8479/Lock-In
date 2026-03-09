@@ -7,6 +7,19 @@ let username: string | null = null;
 export function connectSocket(onMessage: (data: any) => void) {
 
 
+//Cards on the table, this entire class is part of the old system
+
+//Most of what is here is no longer used
+
+//HOWEVER, its persistance across our different pages proved to be
+//really useful for remembering stuff between them, so a lot of that
+//still happens here
+
+//please do not try to remove this 
+
+
+
+
 	currentListener = onMessage;
 
 	if (socket) return;
