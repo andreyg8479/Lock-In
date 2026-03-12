@@ -11,6 +11,7 @@ function NoteEdit() {
 	//for getting the note name if we come here from list
 	const location = useLocation();
 	const ogNoteName = location.state?.noteName;
+	const ogNoteServer = true; //true = server, false = client, //
 	
 	const [noteId, setNoteId] = useState<string | null>(null);
 	const [pinned, setPinned] = useState(false);
@@ -70,7 +71,7 @@ function NoteEdit() {
 	
 
 	
-	const doSaveServer = async () => {
+	const doSaveServer = async () => { // use ogNoteServer to tell if its originaly from the server or the client
 		const userID = getUserId();
 		if (!userID) {
 			console.log("Not logged in"); 
@@ -107,7 +108,7 @@ function NoteEdit() {
 		}
 	}
 	
-	const doSaveClient = () => {
+	const doSaveClient = () => {  // use ogNoteServer to tell if its originaly from the server or the client
 		// saving to client is sprint 2 problem
 		console.log("Save to client is sprint 2 problem");
 	}
@@ -162,16 +163,16 @@ function NoteEdit() {
 	
 		<div className="buttons">
 		
-			<button onClick={doBack}>
-			Back
+			<button onClick={doExit}>
+			Exit
 			</button>
 			
 			<button onClick={doSaveServer}>
-			Save to Server
+			{(ogNoteName || ogNoteServer) ? "Save to Server?" : "Clone to Server?"}
 			</button>
 			
 			<button onClick={doSaveClient}>
-			Save to Client
+			{(ogNoteName || !ogNoteServer) ? "Save to Client?" : "Clone to Client?"}
 			</button>
 			
 			<button onClick={togglePin}>
