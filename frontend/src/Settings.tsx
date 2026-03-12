@@ -42,7 +42,28 @@ function Settings() {
 	}
 	
 	function updateChanges() {
+	
+		//bounds
+		const upper = 64;
+		const lower = 4;
+		
+		if (prefSize < lower || prefSize > upper) {
+			alert("Text size must be between ", lower, " and ", upper, ".");
+			return;
+		}
+		
+		code = key.charCodeAt(0);
+		if (!(code > 47 && code < 58) && // numeric (0-9)
+        !(code > 64 && code < 91)) { // upper alpha (A-Z)
+			alert("Your key must be either a letter key or digit key");
+			return;
+		}
+		
+		
 		//make sure the inputs are valid, then send them to the the WebSocketConnect
+		
+		alert("Settings Updated Successfully");
+	
 	}
 
   return (
