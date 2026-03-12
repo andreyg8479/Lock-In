@@ -105,3 +105,6 @@ export function setAuthToken(token: CryptoKey) {
 export function setUsername(name: string) {
     username = name;
 }
+
+
+
