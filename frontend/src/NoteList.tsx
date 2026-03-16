@@ -19,6 +19,7 @@ function NotePage() {
 	const navigate = useNavigate();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
 	const [searchTerm, setSearchTerm] = useState<string>('');
+	const [isListHidden, setIsListHidden] = useState<boolean>(false);
 	
 	const searchTermRef = useRef(searchTerm);
 	const sortByRef = useRef(sortBy);
@@ -194,6 +195,9 @@ function NotePage() {
 		const listBox = document.getElementById("noteList");
 		if (!listBox) return;
 		
+		// If the list is currently hidden, do not update its contents
+		if (isListHidden) return;
+		
 		listBox.innerHTML = "";
 		
 		for (const note of notes) {
@@ -231,6 +235,10 @@ function NotePage() {
 		setSearchTerm(event.target.value);
 	};
 
+	const toggleListVisibility = () => {
+		setIsListHidden((prev) => !prev);
+	};
+
   return (
 	<div className="list-page">
 	
@@ -248,6 +256,13 @@ function NotePage() {
 			    value={searchTerm}
 				onChange={handleInputChange}
 			/>
+			<button
+				type="button"
+				className="hide-list-button"
+				onClick={toggleListVisibility}
+			>
+				{isListHidden ? "Unhide Notes" : "Hide Notes"}
+			</button>
 			<select
 				value={sortBy}
 				onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -257,10 +272,11 @@ function NotePage() {
 				<option value="byCreated">By Created</option>
 			</select>
 		</div>
-	
-	
 		<div className="list-container">
-			<div className="list-box" id="noteList">
+			<div
+				className={`list-box ${isListHidden ? "list-box-hidden" : ""}`}
+				id="noteList"
+			>
 			</div>
 		</div>
 		
