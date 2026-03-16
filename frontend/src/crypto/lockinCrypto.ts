@@ -207,6 +207,12 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
         toArrayBuffer(contentBuffer)
     );
 
+    // Pack IV and content together
+    const combinedContent = new Uint8Array(iv.length + ciphertextBuffer.byteLength);
+    combinedContent.set(iv);
+    combinedContent.set(new Uint8Array(ciphertextBuffer), iv.length);
+
+
     // Step 3: encrypt the name, with a separate IV to prevent reuse
     const nameIv = randomBytes(IV_LEN);
     const nameBuffer = utf8Bytes(uploadedNote.name);
@@ -227,8 +233,7 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
         userID: uploadedNote.userID,
         noteID: uploadedNote.id,
         encryptedName: toBase64(combinedName),
-        ciphertextB64: toBase64(new Uint8Array(ciphertextBuffer)),
-        ivB64: toBase64(iv),
+        ciphertextB64: toBase64(combinedContent),
         pinned: uploadedNote.pinned,
         lastModified: uploadedNote.lastModified,
         createdAt: uploadedNote.createdAt
@@ -238,8 +243,9 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
 export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: CryptoKey): Promise<DecryptedNote> {
     
     // Step 1: extract the IV and ciphertext and decrypt
-    const iv = fromBase64(encryptedNote.ivB64);
-    const ciphertext = fromBase64(encryptedNote.ciphertextB64);
+    const combinedContent = fromBase64(encryptedNote.ciphertextB64);
+    const iv = combinedContent.slice(0, IV_LEN);
+    const ciphertext = combinedContent.slice(IV_LEN);
 
     const plaintextBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
@@ -257,7 +263,7 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
     const nameBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(nameIv) },
         vaultKey,
-        toArrayBuffer(encryptedName)
+        toArrayBuffer(nameBuffer)
     );
 
     const name = new TextDecoder().decode(nameBuffer);
@@ -267,7 +273,6 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
         id: encryptedNote.noteID,
         name: name,
         plaintext: plaintext,
-        ivB64: encryptedNote.ivB64,
         pinned: encryptedNote.pinned,
         lastModified: encryptedNote.lastModified,
         createdAt: encryptedNote.createdAt

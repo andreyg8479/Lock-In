@@ -3,7 +3,6 @@ export type EncryptedNote = {
     noteID: string,
     encryptedName: string,
     ciphertextB64: string,
-    ivB64: string,
     pinned: boolean,
     lastModified: string,
     createdAt: string
@@ -14,7 +13,6 @@ export type DecryptedNote = {
     id: string,
     name: string,
     plaintext: string,
-    ivB64: string,
     pinned: boolean,
     lastModified: string,
     createdAt: string

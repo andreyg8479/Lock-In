@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { connectSocket, getUserId, sendMessage, checkSocket, getAuthToken } from "./WebSocketConnect";
 import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
-// import { decryptFilenames } from "./crypto/lockinCrypto";
+import { decryptFilenames } from "./crypto/lockinCrypto";
 import './NoteList.css'
 
 type Note = {
+    id: string; // added id
 	name: string;
 	modified: Date;
 	made: Date;
@@ -134,39 +135,33 @@ function NotePage() {
 				
 				if (response.notes) {
 					
-					let noteNames = response.notes.map((n: any) => n.note_title);
+                    const encryptedNotes = response.notes;
+					let noteNames = encryptedNotes.map((n: any) => n.encryptedName);
 					
-					// dont worry about encrypting/decrypting anthing for now
-
-					
-					/* If we have the key, decrypt. Else show raw (or placeholder)
 					if (vaultKey) {
 						try {
-							// decryptFilenames expects string[], returns Promise<string[]>
-							// This assumes n.note_title is the encrypted base64 string
 							const decrypted = await decryptFilenames(noteNames, vaultKey);
 							noteNames = decrypted;
 						} catch (e) {
 							console.error("Decryption error:", e);
 						}
-					} */
+					}
 
-					const fetchedNotes = response.notes.map((n: any, index: number) : Note => ({
+					const fetchedNotes = encryptedNotes.map((n: any, index: number) : Note => ({
+                        id: n.noteID,
 						name: noteNames[index], 
-						modified: n.updated_at,
-						made: n.created_at, // Server only returns one date for now
+						modified: n.lastModified,
+						made: n.createdAt, 
 						pinned: n.pinned,
-						client: false // From server
+						client: false 
 					}));
 					
-					loadListAfterServer(fetchedNotes);
+					loadListAfterServer(fetchedNotes, searchTermRef.current, sortByRef.current);
 				}
 			} catch (err) {
 				console.error("Failed to load notes:", err);
-				// Fallback to socket or empty list
 			}
 		} else {
-			// Fallback if no user ID (waiting for socket/login)
 			console.log("No user ID available for API call");
 		}
 	}
@@ -213,7 +208,7 @@ function NotePage() {
 			
 			editButton.addEventListener("click", () => {
 			
-				navigate("/NoteEdit", { state: { noteName: note.name, client: note.client } });
+				navigate("/NoteEdit", { state: { noteName: note.name, noteID: note.id, client: note.client } });
 			
 			});
 			
