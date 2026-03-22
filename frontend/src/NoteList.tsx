@@ -5,6 +5,15 @@ import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
 // import { decryptFilenames } from "./crypto/lockinCrypto";
 import './NoteList.css'
+import { useKeyComboDetector } from './useKeyComboDetector'
+
+// TODO: replace with user settings later
+const NOTE_LIST_KEY_COMBO_DEMO = {
+	key: 'h',
+	shift: true,
+	alt: true,
+	ctrl: false,
+} as const
 
 type Note = {
 	name: string;
@@ -31,6 +40,11 @@ function NotePage() {
 	useEffect(() => {
 		sortByRef.current = sortBy;
 	}, [sortBy]);
+
+	useKeyComboDetector(NOTE_LIST_KEY_COMBO_DEMO, () => {
+		// TODO: replace with actual hiding functionality
+		console.log('Key combo detector: demo shortcut activated (Shift+Alt+H)');
+	});
   
 	useEffect(() => {
 		
