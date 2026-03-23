@@ -12,6 +12,21 @@ const Login: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const navigate = useNavigate();
+	
+	
+	function generate2faCode() {
+		let code = "";
+		const len = 6;
+		const posChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		
+		for (let i = 0; i < len; i++) {
+			const rand = Math.floor(Math.random() * (posChars.length - 1 - 0 + 1)) + 0;
+			code += posChars[rand];
+		}
+		
+		return code;
+	}
+	
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
