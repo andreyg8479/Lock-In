@@ -28,17 +28,17 @@ export async function getAllNoteNames(req: Request, res: Response) {
 
 export async function getNote(req: Request, res: Response) {
 
-    // Expecting both noteName and userID in the request body for specific retrieval
-    const { noteName, userID } = req.body;
+    // Expecting noteId and userID in the request body for specific retrieval
+    const { noteId, userID } = req.body;
 
-    if (!noteName || !userID) {
-         return res.status(400).json({ error: "Both noteName and userID are required" });
+    if (!noteId || !userID) {
+         return res.status(400).json({ error: "Both noteId and userID are required" });
     }
 
     const { data: notes, error: noteError } = await supabase
                            .from('notes')
                            .select('*')                // get all columns in the row
-                           .eq('note_title', noteName)
+                           .eq('id', noteId)
                            .eq('user_id', userID)      // Ensure we only get the note for this user
                            .order('updated_at', { ascending: false }); // get latest version if duplicates exist
            
@@ -62,8 +62,10 @@ export async function uploadNote(req: Request, res: Response) {
     const { data, error } = await supabase
         .from('notes')
         .insert([{
-            note_title: req.body.name,
-            note_text: req.body.data,
+            id: req.body.id,
+            note_title: req.body.note_title,
+            note_text: req.body.note_text,
+            iv_b64: req.body.iv_b64,
             pinned: req.body.pinned,
             user_id: req.body.user_id,
             created_at: new Date().toISOString(),
@@ -90,12 +92,13 @@ export async function updateNote(req: Request, res: Response) {
     const { data, error } = await supabase
         .from('notes')
         .update({
-            note_title: req.body.name,
-            note_text: req.body.data,
+            note_title: req.body.note_title,
+            note_text: req.body.note_text,
+            iv_b64: req.body.iv_b64,
             pinned: req.body.pinned,
             updated_at: new Date().toISOString()
         })
-        .eq('id', req.body.noteId)
+        .eq('id', req.body.id)
         .eq('user_id', req.body.user_id);
 
     if (error) {

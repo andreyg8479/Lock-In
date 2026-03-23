@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
-import { setUserId, setAuthToken, setUsername } from "./WebSocketConnect"; // Fixed imports
+import { useAuth } from "./AuthContext";
 
 import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
 import { handleLogin } from "./crypto/lockinCrypto";
@@ -12,6 +12,7 @@ const Login: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const navigate = useNavigate();
+	const { setUserId, setVaultKey, setUsername } = useAuth();
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -57,7 +58,7 @@ const Login: React.FC = () => {
 				// Save the vault key or session token here if needed
 				setUserId(response.id);
 				
-				setAuthToken(result.payload.vaultKey);
+				setVaultKey(result.payload.vaultKey);
 				setUsername(response.username);
 				// For now just navigate
 				navigate("/");

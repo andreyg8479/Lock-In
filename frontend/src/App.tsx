@@ -1,8 +1,6 @@
 
-import { BrowserRouter as Router, Routes, Route, Link  } from "react-router-dom"; //this is for making things their own page
+import { BrowserRouter as Router, Routes, Route, Link  } from "react-router-dom";
 
-import { useEffect } from "react"; //useState can also be added here but idk if its needed
-import { connectSocket } from "./WebSocketConnect"; //can also add sendMessage
 import "./App.css";
 import Testing from "./Testing";
 import NoteEdit from "./NoteEdit";
@@ -51,17 +49,6 @@ function Home() {
 
 
 function App() {
-  
-	useEffect(() => {
-		
-		connectSocket((data) => {
-			console.log("Got data");
-			console.log(data);
-			
-		});
-		
-	}, [])
-	
 
   return (
 	<Router>

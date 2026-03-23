@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react'
-import { getUserId } from "./WebSocketConnect";
+import { useAuth } from "./AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getNote, uploadNote, updateNote, deleteNote } from "./api"; // Import API functions
+import { getNote, uploadNote, updateNote, deleteNote } from "./api";
+import { encryptNote, decryptNote } from "./crypto/lockinCrypto";
+import { saveNoteClient, getNoteClient } from "./client_storage";
+import type { EncryptedNote, DecryptedNote } from "../../shared_types/note_types";
 import './NoteEdit.css'
 
 function NoteEdit() {
 
 	const navigate = useNavigate();
+	const { userId, vaultKey } = useAuth();
 	
 	//for getting the note name if we come here from list
 	const location = useLocation();
-	const ogNoteName = location.state?.noteName;
-	const ogNoteServer = true; //true = server, false = client, //
+	const locationState = location.state || {};
+	const ogNoteId = locationState.noteId;
+	const ogNoteName = locationState.noteName;
+	const ogNoteClient = locationState.client || false; //true = client, false = server
 	
-	const [noteId, setNoteId] = useState<string | null>(null);
+	const [noteId, setNoteId] = useState<string | null>(ogNoteId || null);
 	const [pinned, setPinned] = useState(false);
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
@@ -29,36 +35,54 @@ function NoteEdit() {
 		}
 		
 		const fetchNote = async () => {
-			if (ogNoteName) {
-				const userID = getUserId();
-				if (!userID) {
-					console.error("User ID missing");
-					return;
-				}
-
-				try {
-					console.log("Requesting Note via API");
-					// The controller expects { noteName: string } in req.body.
-					// We pass userID as well if needed in future auth checks
-					// VaultController.ts:getNote uses req.body.noteName
-					const response = await getNote({ noteName: ogNoteName, userID });
-					
-					console.log("RAW RESPONSE FROM SERVER:", response);
-
-					// VaultController.ts:getNote returns { note: notes } where 'notes' is likely an array from supabase.select('*')
-					if (response.note && response.note.length > 0) {
-						const noteData = response.note[0];
-						
-						// Map database columns to state
-						// DB columns based on VaultController.ts: 'note_text', 'pinned', 'id'
-						setContent(noteData.note_text);
-						setPinned(noteData.pinned);
-						setNoteId(noteData.id);
-						
-						console.log("Loaded Note Id: ", noteData.id);
+			if (ogNoteId) {
+				if (ogNoteClient) {
+					// Client-side fetch
+					console.log("Loading from Client Storage...");
+					try {
+						const encryptedNote = await getNoteClient(ogNoteId);
+						if (encryptedNote && vaultKey) {
+							const decrypted = await decryptNote(encryptedNote, vaultKey);
+							setContent(decrypted.note_text);
+							setPinned(decrypted.pinned);
+							setTitle(decrypted.note_title);
+						}
+					} catch (e) {
+						console.error("Client load error:", e);
 					}
-				} catch (error) {
-					console.error("Error fetching note:", error);
+				} else {
+					// Server-side fetch
+					if (!userId) {
+						console.error("User ID missing");
+						return;
+					}
+
+					try {
+						console.log("Requesting Note via API");
+						const response = await getNote({ noteId: ogNoteId, userID: userId });
+						
+						if (response.note && response.note.length > 0) {
+							const noteData = response.note[0] as EncryptedNote;
+							
+							if (vaultKey) {
+								try {
+									const decrypted = await decryptNote(noteData, vaultKey);
+									setContent(decrypted.note_text);
+									setPinned(decrypted.pinned);
+									setTitle(decrypted.note_title);
+								} catch (e) {
+									console.error("Decryption failed:", e);
+									alert("Failed to decrypt note. Check your key.");
+								}
+							} else {
+								console.warn("No vault key available to decrypt note");
+							}
+
+							setNoteId(noteData.id);
+						}
+					} catch (error) {
+						console.error("Error fetching note:", error);
+					}
 				}
 			} else {
 				console.log("no note selected, want to make new note");
@@ -67,39 +91,47 @@ function NoteEdit() {
 
 		fetchNote();
 		
-	}, [ogNoteName])
+	}, [ogNoteId, ogNoteClient])
 	
 
 	
-	const doSaveServer = async () => { // use ogNoteServer to tell if its originaly from the server or the client
-		const userID = getUserId();
-		if (!userID) {
+	const doSaveServer = async () => { 
+		if (!userId) {
 			console.log("Not logged in"); 
+			return;
+		}
+		
+		if (!vaultKey) {
+			alert("Encryption key not found. Please log in again.");
 			return;
 		}
 
 		try {
+			const id = noteId || crypto.randomUUID(); 
+			const now = new Date().toISOString();
+
+			const noteToEncrypt: DecryptedNote = {
+				user_id: userId,
+				id: id,
+				note_title: title,
+				note_text: content,
+				iv_b64: "",
+				pinned: pinned,
+				updated_at: now,
+				created_at: now
+			};
+
+			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
+
 			if (noteId == null) { 
-				// Create New Note
 				console.log("Creating new note...");
-				await uploadNote({
-					name: title,
-					data: content,
-					pinned: pinned,
-					user_id: userID
-				});
+				await uploadNote(encryptedNote);
 				alert("Note Created!");
+				setNoteId(id);
 				navigate("/NoteList");
 			} else {
-				// Update Existing Note
 				console.log("Updating note...");
-				await updateNote({
-					noteId: noteId,
-					name: title, 
-					data: content,
-					pinned: pinned,
-					user_id: userID
-				});
+				await updateNote(encryptedNote);
 				alert("Note Updated!");
 			}
 		} catch (error) {
@@ -108,9 +140,36 @@ function NoteEdit() {
 		}
 	}
 	
-	const doSaveClient = () => {  // use ogNoteServer to tell if its originaly from the server or the client
-		// saving to client is sprint 2 problem
-		console.log("Save to client is sprint 2 problem");
+	const doSaveClient = async () => {
+		if (!vaultKey) {
+			alert("Encryption key not found. Please log in again.");
+			return;
+		}
+		
+		try {
+			const id = noteId || crypto.randomUUID();
+			const now = new Date().toISOString();
+
+			const noteToEncrypt: DecryptedNote = {
+				user_id: userId || "offline-user",
+				id: id,
+				note_title: title,
+				note_text: content,
+				iv_b64: "",
+				pinned: pinned,
+				updated_at: now,
+				created_at: now
+			};
+
+			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
+			await saveNoteClient(encryptedNote);
+			
+			setNoteId(id);
+			alert("Saved to Client Storage!");
+		} catch (error) {
+			console.error("Client save failed:", error);
+			alert("Failed to save to client storage.");
+		}
 	}
 	
 	const togglePin = () => {
@@ -134,14 +193,12 @@ function NoteEdit() {
 			setConfirming(true);
 		} else {
 			try {
-                const userID = getUserId();
-                if (!userID) {
-                    console.error("User ID missing");
-                    return;
-                }
-				// VaultController deleteNote expects { note_title: string }
+				if (!userId) {
+					console.error("User ID missing");
+					return;
+				}
 				if (title) { 
-					await deleteNote({ note_title: title, user_id: userID });
+					await deleteNote({ note_title: title, user_id: userId });
 					navigate("/NoteList");
 				}
 			} catch (error) {
@@ -163,16 +220,16 @@ function NoteEdit() {
 	
 		<div className="buttons">
 		
-			<button onClick={doExit}>
+			<button onClick={doBack}>
 			Exit
 			</button>
 			
 			<button onClick={doSaveServer}>
-			{(ogNoteName || ogNoteServer) ? "Save to Server?" : "Clone to Server?"}
+			{noteId && !ogNoteClient ? "Save to Server" : "Upload to Server"}
 			</button>
 			
 			<button onClick={doSaveClient}>
-			{(ogNoteName || !ogNoteServer) ? "Save to Client?" : "Clone to Client?"}
+			{noteId && ogNoteClient ? "Save to Client" : "Save to Client"}
 			</button>
 			
 			<button onClick={togglePin}>
@@ -180,7 +237,7 @@ function NoteEdit() {
 			</button>
 			
 			<button onClick={attachFile}>
-			Attach File {/* Should Change to unpin if is pinned */}
+			Attach File
 			</button>
 			
 			<button onClick={doDelete}>
@@ -190,8 +247,6 @@ function NoteEdit() {
 			{confirming && (
 				<button onClick={doCancel}>Cancel</button>
 			)}
-			{/* more buttons probably */}
-			
 			
 		</div>
 		

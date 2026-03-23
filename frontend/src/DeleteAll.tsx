@@ -1,17 +1,14 @@
-import { useEffect, useState } from 'react' //useState can also be added here but idk if its needed
+import { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import { requestDeleteAccount } from './api';
 import './DeleteAll.css'
-import { getUsername } from './WebSocketConnect';
+import { useAuth } from './AuthContext';
 
 function DeleteAll() {
 
 	const navigate = useNavigate();
 	const [confirming, setConfirming] = useState(false);
-  
-	useEffect(() => {
-		
-	}, [])
+	const { username } = useAuth();
 	
 	const handleBack = () => {
 		navigate("/");
@@ -21,8 +18,6 @@ function DeleteAll() {
 		if (!confirming) {
 			setConfirming(true);
 		} else {
-			
-			const username = getUsername();
 
 			try {
 				await requestDeleteAccount({ username }); // Call backend API

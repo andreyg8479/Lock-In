@@ -3,9 +3,8 @@ import express from "express"
 import path from "path"
 import http from "http"
 import dotenv from "dotenv"
-import { WebSocketServer, WebSocket } from "ws";
 import { createClient } from "@supabase/supabase-js" 
-import cors from "cors" // CORS resolution to accept HTTP requests on 8080 from 5173
+import cors from "cors"
 
 // For Supabase connection
 dotenv.config();
@@ -19,13 +18,12 @@ if (!url || !key) {
 
 const supabase = createClient(url, key);
 
-// Note: This WS stuff is legacy code because we switched to a RESTful API
 const PORT = process.env.PORT || 8080;
 
 import { handleSignup, handleLogin, deleteAccount } from "./controllers/AuthController";
 import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote } from "./controllers/VaultController";
 
-// RESTful API routes will be defined using Express, and WebSocket will be used for real-time features if needed
+// RESTful API routes
 export const app = express();
 app.use(cors({
 	origin: "http://localhost:5173", // this may need to be changed to sm more scalable in the future
@@ -113,117 +111,7 @@ app.use((req, res) => {
 
 
 
-// this creates an http server
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
-
-// this is boilerplate to get the current SM stuff to work with typescript
-// but ideally this gets phased about by the REST API
-enum State {
-	STANDARD = "STANDARD",
-	VERIFYING = "VERIFYING",
-	KEY_SETUP = "KEY_SETUP"
-}
-
-//Runs when a browser connects, basicly this is any individual client
-wss.on("connection", (socket) => {
-  console.log("Client connected");
-  
-  socket.send("Hello Client");
-
-  // let SM = State.STANDARD; //State Machine
-  const state = {
-	SM: State.STANDARD as State
-  };
-  
-  //socket.send(); //use this to send stuff to the client
-  
-  //This runs when this client sends a message (CURRENTLY STRINGS)
-  socket.on("message", async (message) => {
-	
-	try {
-	const recieved = JSON.parse(message.toString());
-	
-	switch (state.SM) { //handle the request based on the state
-		case State.STANDARD:
-			//code
-			
-			switch (recieved.command) { //STANDARD COMMANDS SWITCH
-				case "GetList":
-				
-					console.log("Sending List")
-					
-					//get list from database
-					
-					socket.send(JSON.stringify({
-						got: "List",
-						listSize: 3,
-						listNames: ["First", "Two", "3"],
-						listMod: [new Date(), new Date(), new Date()],
-						listMade: [new Date(), new Date(), new Date()],
-						listPinned: [false, false, false]
-					}));
-					
-				break;
-				case "GetNote":			
-					
-					
-					
-				break;
-				case "Override":
-					//delete old note from database
-					//at users data at recieved.note_name store recieved.note_data
-					
-					if (recieved.name_change) {
-						
-						//in users nodes names list remove recieved.old_name and add recieved.note_name
-						
-					}
-					
-					//update node last update time 
-				break;
-                case "NewNote":
-					
-				default:
-					console.log("ERROR: Someone is in an undefined standard command");	
-			} //end standard swtich
-			
-			break; // end standard
-		case State.VERIFYING:
-			//code
-			break;
-		case State.KEY_SETUP:
-			//Client Has Asked to setup key verification
-			
-			//expecting the encrypted version back
-			let encKey = recieved.key;
-			
-			//Store encKey in the database
-			
-			
-			break; //End of KEY_SETUP
-		default:
-			console.log("ERROR: Someone is in an undefined state");	
-		
-	}
-	
-	} catch { //just in case, also for debug maybe
-		console.log("Received:", message.toString());
-		if (message.toString() == "Test Message") {
-			console.log("Sending Back Test");
-			socket.send("Returning Test");
-		}
-	}
-	
-  });
-  
-  
-  
-  
-  socket.on("close", () => {
-    console.log("Client disconnected");
-  });
-});
 
 server.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
