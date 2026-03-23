@@ -23,14 +23,25 @@ export async function handleSignup(req: Request, res: Response) {
         }
 
         //if username already exists, return error
-        const { data: existingUser, error: existingUserError } = await supabase
+        const { data: existingUser } = await supabase
             .from("users")
-            .select("*")
+            .select("id")
             .eq("username", username)
-            .single();
+            .maybeSingle();
             
         if (existingUser) {
             return res.status(400).json({ error: "Username already exists"});
+        }
+
+        // if email already exists, return error
+        const { data: existingEmail } = await supabase
+            .from("users")
+            .select("id")
+            .eq("email", email)
+            .maybeSingle();
+
+        if (existingEmail) {
+            return res.status(400).json({ error: "Email already in use" });
         }
 
             
@@ -88,19 +99,20 @@ export async function handleLogin(req: Request, res: Response) {
         // just the crypto metadata (i.e. we dont want to leak the created_at timestamp)
 
         // Step 3: search DB for the associated email 
-        const { data, error } = await supabase
+        const { data: rows, error } = await supabase
             .from("users")
             .select("id, username, email, kdf, iterations, salt, cipher, iv, aes_key_length, gcm_iv_length, wrapped_master_key, version")
-            .eq("email", email)
-            .single();
+            .eq("email", email);
 
         if (error) {
              return res.status(400).json({ error: error.message });
         }
 
-        if (!data) {
+        if (!rows || rows.length === 0) {
              return res.status(404).json({ error: "User not found" });
         }
+
+        const data = rows[0];
 
         // otherwise email successfully found, reply with publicly known crypto metadata
         return res.status(200).json(data);

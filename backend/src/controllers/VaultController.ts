@@ -62,7 +62,6 @@ export async function uploadNote(req: Request, res: Response) {
     const { data, error } = await supabase
         .from('notes')
         .insert([{
-            id: req.body.id,
             note_title: req.body.note_title,
             note_text: req.body.note_text,
             iv_b64: req.body.iv_b64,
@@ -70,7 +69,9 @@ export async function uploadNote(req: Request, res: Response) {
             user_id: req.body.user_id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-        }]);
+        }])
+        .select('id')
+        .single();
 
     if (error) {
         const code = (error as any).code;
@@ -81,8 +82,8 @@ export async function uploadNote(req: Request, res: Response) {
         return res.status(400).json({ error: error.message });
     }
 
-    // otherwise note uploaded successfully
-     return res.status(201).json({ ok: true });
+    // otherwise note uploaded successfully, return the DB-generated id
+    return res.status(201).json({ ok: true, id: data.id });
     
 }
 
