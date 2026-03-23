@@ -107,12 +107,11 @@ function NoteEdit() {
 		}
 
 		try {
-			const id = noteId || crypto.randomUUID(); 
 			const now = new Date().toISOString();
 
 			const noteToEncrypt: DecryptedNote = {
 				user_id: userId,
-				id: id,
+				id: noteId ?? "",
 				note_title: title,
 				note_text: content,
 				iv_b64: "",
@@ -125,9 +124,9 @@ function NoteEdit() {
 
 			if (noteId == null) { 
 				console.log("Creating new note...");
-				await uploadNote(encryptedNote);
+				const result = await uploadNote(encryptedNote);
+				setNoteId(String(result.id));
 				alert("Note Created!");
-				setNoteId(id);
 				navigate("/NoteList");
 			} else {
 				console.log("Updating note...");
