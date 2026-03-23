@@ -6,14 +6,8 @@ import { getAllNoteNames as loadNotes } from "./api";
 // import { decryptFilenames } from "./crypto/lockinCrypto";
 import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
+import { getAlt, getKey, getShift } from './SettingsMem'
 
-// TODO: replace with user settings later
-const NOTE_LIST_KEY_COMBO_DEMO = {
-	key: 'h',
-	shift: true,
-	alt: true,
-	ctrl: false,
-} as const
 
 type Note = {
 	name: string;
@@ -29,6 +23,13 @@ function NotePage() {
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
 	const [searchTerm, setSearchTerm] = useState<string>('');
 	const [isListHidden, setIsListHidden] = useState<boolean>(false);
+	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
+	const hideCombo = {
+		key: getKey(),
+		shift: getShift(),
+		alt: getAlt(),
+		ctrl: true,
+	} as const;
 	
 	const searchTermRef = useRef(searchTerm);
 	const sortByRef = useRef(sortBy);
@@ -41,10 +42,9 @@ function NotePage() {
 		sortByRef.current = sortBy;
 	}, [sortBy]);
 
-	useKeyComboDetector(NOTE_LIST_KEY_COMBO_DEMO, () => {
-		// TODO: replace with actual hiding functionality
-		console.log('Key combo detector: demo shortcut activated (Shift+Alt+H)');
-	});
+	useKeyComboDetector(hideCombo, () => {
+		hideButtonRef.current?.click();
+	}, { preventDefault: true });
   
 	useEffect(() => {
 		
@@ -273,6 +273,7 @@ function NotePage() {
 			<button
 				type="button"
 				className="hide-list-button"
+				ref={hideButtonRef}
 				onClick={toggleListVisibility}
 			>
 				{isListHidden ? "Unhide Notes" : "Hide Notes"}

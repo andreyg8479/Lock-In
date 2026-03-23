@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getUserId } from "./WebSocketConnect";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getNote, uploadNote, updateNote, deleteNote } from "./api"; // Import API functions
 import './NoteEdit.css'
+import { useKeyComboDetector } from './useKeyComboDetector'
+import { getAlt, getKey, getShift } from './SettingsMem'
 
 function NoteEdit() {
-
 	const navigate = useNavigate();
 	
 	//for getting the note name if we come here from list
@@ -18,8 +19,24 @@ function NoteEdit() {
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
 	const [content, setContent] = useState("");
+	const [isNoteInfoHidden, setIsNoteInfoHidden] = useState(false);
+	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	
 	const [confirming, setConfirming] = useState(false);
+	const hideCombo = {
+		key: getKey(),
+		shift: getShift(),
+		alt: getAlt(),
+		ctrl: true,
+	} as const;
+
+	useKeyComboDetector(
+		hideCombo,
+		() => {
+			hideButtonRef.current?.click();
+		},
+		{ preventDefault: true }
+	);
   
 	useEffect(() => {
 	
@@ -120,6 +137,10 @@ function NoteEdit() {
 	const doBack = () => {
 		navigate("/NoteList");
 	}
+
+	const toggleNoteInfoVisibility = () => {
+		setIsNoteInfoHidden((prev) => !prev);
+	}
 	
 	const attachFile = () => {
 		//Not a this week problem
@@ -155,7 +176,7 @@ function NoteEdit() {
 	<div className="note-page">
 	
 		<input
-			className="note-title"
+			className={`note-title ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
 			type="text"
 			value={title}
 			onChange={(e) => setTitle(e.target.value)}
@@ -163,7 +184,7 @@ function NoteEdit() {
 	
 		<div className="buttons">
 		
-			<button onClick={doExit}>
+			<button onClick={doBack}>
 			Exit
 			</button>
 			
@@ -186,6 +207,10 @@ function NoteEdit() {
 			<button onClick={doDelete}>
 			{confirming ? "Positive?" : "Delete"}
 			</button>
+
+			<button ref={hideButtonRef} onClick={toggleNoteInfoVisibility}>
+			{isNoteInfoHidden ? "Unhide Note Info" : "Hide Note Info"}
+			</button>
 			
 			{confirming && (
 				<button onClick={doCancel}>Cancel</button>
@@ -197,7 +222,7 @@ function NoteEdit() {
 		
 		<textarea
 		
-			className="note-text"
+			className={`note-text ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
 			placeholder="Write note here"
 			value={content}
 			onChange={(e) => setContent(e.target.value)}
