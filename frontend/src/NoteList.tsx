@@ -21,7 +21,9 @@ function NotePage() {
 
 	const navigate = useNavigate();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
+	const [showTypes, setShowTypes] = useState<SortOption>('all');
 	const [searchTerm, setSearchTerm] = useState<string>('');
+	
 	const [isListHidden, setIsListHidden] = useState<boolean>(false);
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	const hideCombo = {
@@ -285,6 +287,17 @@ function NotePage() {
 				<option value="byName">By Name</option>
 				<option value="byModified">By Modified</option>
 				<option value="byCreated">By Created</option>
+			</select>
+			
+			
+			<select
+				value={showTypes}
+				onChange={(e) => setShowTypes(e.target.value)}
+			>
+				<option value="all">All Types</option>
+				<option value="text">Text Only</option>
+				<option value="audio">Audio Only</option>
+				<option value="image">Image Only</option>
 			</select>
 		</div>
 		<div className="list-container">
