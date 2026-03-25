@@ -7,13 +7,26 @@ import { getAllNotesClient } from "./client_storage";
 import { decryptFilenames } from "./crypto/lockinCrypto";
 import type { DisplayNote } from "../../shared_types/note_types";
 import './NoteList.css'
+import { useKeyComboDetector } from './useKeyComboDetector'
+import { getAlt, getKey, getShift } from './SettingsMem'
+
 
 function NotePage() {
 
 	const navigate = useNavigate();
 	const { userId, vaultKey } = useAuth();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
+	const [showTypes, setShowTypes] = useState<SortOption>('all');
 	const [searchTerm, setSearchTerm] = useState<string>('');
+	
+	const [isListHidden, setIsListHidden] = useState<boolean>(false);
+	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
+	const hideCombo = {
+		key: getKey(),
+		shift: getShift(),
+		alt: getAlt(),
+		ctrl: true,
+	} as const;
 	
 	const searchTermRef = useRef(searchTerm);
 	const sortByRef = useRef(sortBy);
@@ -25,8 +38,48 @@ function NotePage() {
 	useEffect(() => {
 		sortByRef.current = sortBy;
 	}, [sortBy]);
+
+	useKeyComboDetector(hideCombo, () => {
+		hideButtonRef.current?.click();
+	}, { preventDefault: true });
   
 	useEffect(() => {
+		
+		connectSocket((data) => {
+		
+			if (typeof data === "object") {	
+				
+				//console.log(data.got);
+				
+				if (data.got === "List") {
+				
+					let noteList: DisplayNote[] = [];
+					
+					const size = data.listSize;
+					
+					for (let i = 0; i < size; i++) {
+
+				
+						//console.log("i = ", i);					
+						noteList.push({
+							name: data.listNames[i],
+							modified: data.listMod[i],
+							made: data.listMade[i],
+							pinned: data.listPinned[i],
+							client: false,
+							noteType: 'text' //CHANGE THIS TO DATA FROM DATABASE
+						});
+					}
+
+					loadListAfterServer(noteList, searchTermRef.current, sortByRef.current);
+				}
+				
+			} else {			
+				console.log("Received:", data);
+			} 
+		});
+		
+		
 		loadList();
 	}, [])
 
@@ -163,9 +216,19 @@ function NotePage() {
 		const listBox = document.getElementById("noteList");
 		if (!listBox) return;
 		
+		// If the list is currently hidden, do not update its contents
+		if (isListHidden) return;
+		
 		listBox.innerHTML = "";
 		
 		for (const note of notes) {
+		
+			if (showTypes != 'all') {
+				if (item.noteType != showTypes) {
+					continue;
+				}
+			}
+		
 			const item = document.createElement("div");
 			item.className = "list-item";
 			
@@ -195,6 +258,10 @@ function NotePage() {
 		setSearchTerm(event.target.value);
 	};
 
+	const toggleListVisibility = () => {
+		setIsListHidden((prev) => !prev);
+	};
+
   return (
 	<div className="list-page">
 	
@@ -212,6 +279,14 @@ function NotePage() {
 			    value={searchTerm}
 				onChange={handleInputChange}
 			/>
+			<button
+				type="button"
+				className="hide-list-button"
+				ref={hideButtonRef}
+				onClick={toggleListVisibility}
+			>
+				{isListHidden ? "Unhide Notes" : "Hide Notes"}
+			</button>
 			<select
 				value={sortBy}
 				onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -220,11 +295,23 @@ function NotePage() {
 				<option value="byModified">By Modified</option>
 				<option value="byCreated">By Created</option>
 			</select>
+			
+			
+			<select
+				value={showTypes}
+				onChange={(e) => setShowTypes(e.target.value)}
+			>
+				<option value="all">All Types</option>
+				<option value="text">Text Only</option>
+				<option value="audio">Audio Only</option>
+				<option value="image">Image Only</option>
+			</select>
 		</div>
-	
-	
 		<div className="list-container">
-			<div className="list-box" id="noteList">
+			<div
+				className={`list-box ${isListHidden ? "list-box-hidden" : ""}`}
+				id="noteList"
+			>
 			</div>
 		</div>
 		

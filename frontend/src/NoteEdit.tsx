@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from "./AuthContext";
+import { useEffect, useRef, useState } from 'react'
+import { getUserId } from "./WebSocketConnect";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getNote, uploadNote, updateNote, deleteNote } from "./api";
 import { encryptNote, decryptNote } from "./crypto/lockinCrypto";
 import { saveNoteClient, getNoteClient } from "./client_storage";
 import type { EncryptedNote, DecryptedNote } from "../../shared_types/note_types";
 import './NoteEdit.css'
+import { useKeyComboDetector } from './useKeyComboDetector'
+import { getAlt, getKey, getShift } from './SettingsMem'
 
 function NoteEdit() {
-
 	const navigate = useNavigate();
 	const { userId, vaultKey } = useAuth();
 	
@@ -24,8 +27,26 @@ function NoteEdit() {
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
 	const [content, setContent] = useState("");
+	const [isNoteInfoHidden, setIsNoteInfoHidden] = useState(false);
+	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
+	
+	const [extraPassword, setExtraPassword] = useState(false);
 	
 	const [confirming, setConfirming] = useState(false);
+	const hideCombo = {
+		key: getKey(),
+		shift: getShift(),
+		alt: getAlt(),
+		ctrl: true,
+	} as const;
+
+	useKeyComboDetector(
+		hideCombo,
+		() => {
+			hideButtonRef.current?.click();
+		},
+		{ preventDefault: true }
+	);
   
 	useEffect(() => {
 	
@@ -60,6 +81,16 @@ function NoteEdit() {
 					try {
 						console.log("Requesting Note via API");
 						const response = await getNote({ noteId: ogNoteId, userID: userId });
+					// VaultController.ts:getNote returns { note: notes } where 'notes' is likely an array from supabase.select('*')
+					if (response.note && response.note.length > 0) {
+						const noteData = response.note[0];
+						
+						// Map database columns to state
+						// DB columns based on VaultController.ts: 'note_text', 'pinned', 'id'
+						setContent(noteData.note_text);
+						setPinned(noteData.pinned);
+						setNoteId(noteData.id);
+						setExtraPassword(false); //TODO, make this true if the note already has an extra password
 						
 						if (response.note && response.note.length > 0) {
 							const noteData = response.note[0] as EncryptedNote;
@@ -178,6 +209,10 @@ function NoteEdit() {
 	const doBack = () => {
 		navigate("/NoteList");
 	}
+
+	const toggleNoteInfoVisibility = () => {
+		setIsNoteInfoHidden((prev) => !prev);
+	}
 	
 	const attachFile = () => {
 		//Not a this week problem
@@ -185,6 +220,29 @@ function NoteEdit() {
 
 	const doCancel = () => {
 		setConfirming(false);
+	}
+
+	const addExtraPassword = () => {
+		
+		if (extraPassword) {
+			alert("This note already has an extra password!");
+		} else {
+			const extraPass = prompt("Please enter the new extra password. (THIS CANNOT BE CHANGED");
+			
+			if (extraPass == "") {
+				alert("No new password was added");
+			} else {
+			
+				//SEND THE NEW PASSWORD TO THE DATABASE HERE
+				
+				setExtraPassword(true);
+				
+				alert("An extra password has been set. If you forget this, you will not be able to access this note again");
+			
+			}
+
+		}
+		
 	}
 	
 	const doDelete = async () => {
@@ -211,7 +269,7 @@ function NoteEdit() {
 	<div className="note-page">
 	
 		<input
-			className="note-title"
+			className={`note-title ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
 			type="text"
 			value={title}
 			onChange={(e) => setTitle(e.target.value)}
@@ -242,16 +300,26 @@ function NoteEdit() {
 			<button onClick={doDelete}>
 			{confirming ? "Positive?" : "Delete"}
 			</button>
+
+			<button ref={hideButtonRef} onClick={toggleNoteInfoVisibility}>
+			{isNoteInfoHidden ? "Unhide Note Info" : "Hide Note Info"}
+			</button>
 			
 			{confirming && (
 				<button onClick={doCancel}>Cancel</button>
 			)}
 			
+			<button onClick={addExtraPassword}>
+			Add Extra Password
+			</button>
+			{/* more buttons probably */}
+			
+			
 		</div>
 		
 		<textarea
 		
-			className="note-text"
+			className={`note-text ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
 			placeholder="Write note here"
 			value={content}
 			onChange={(e) => setContent(e.target.value)}

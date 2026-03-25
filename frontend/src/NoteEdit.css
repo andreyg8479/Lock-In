@@ -45,3 +45,7 @@
 	padding: 10px;
 	font-size: 16px;
 }
+
+.note-info-hidden {
+	visibility: hidden;
+}
