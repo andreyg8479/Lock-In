@@ -15,6 +15,8 @@ type Note = {
 	made: Date;
 	pinned: boolean;
 	client: boolean;
+	noteType: string;
+	
 };
 
 function NotePage() {
@@ -71,7 +73,8 @@ function NotePage() {
 							modified: data.listMod[i],
 							made: data.listMade[i],
 							pinned: data.listPinned[i],
-							client: false
+							client: false,
+							noteType: 'text' //CHANGE THIS TO DATA FROM DATABASE
 						});
 					}
 
@@ -217,6 +220,13 @@ function NotePage() {
 		listBox.innerHTML = "";
 		
 		for (const note of notes) {
+		
+			if (showTypes != 'all') {
+				if (item.noteType != showTypes) {
+					continue;
+				}
+			}
+		
 			const item = document.createElement("div");
 			item.className = "list-item";
 			
