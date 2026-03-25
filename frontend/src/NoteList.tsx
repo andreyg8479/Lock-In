@@ -1,27 +1,20 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate } from "react-router-dom";
-import { connectSocket, getUserId, sendMessage, checkSocket, getAuthToken } from "./WebSocketConnect";
-import { sortNotes, type SortOption, type NoteForSort } from "./noteListSort";
+import { useAuth } from "./AuthContext";
+import { sortNotes, type SortOption } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
-// import { decryptFilenames } from "./crypto/lockinCrypto";
+import { getAllNotesClient } from "./client_storage";
+import { decryptFilenames } from "./crypto/lockinCrypto";
+import type { DisplayNote } from "../../shared_types/note_types";
 import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getKey, getShift } from './SettingsMem'
 
 
-type Note = {
-	name: string;
-	modified: Date;
-	made: Date;
-	pinned: boolean;
-	client: boolean;
-	noteType: string;
-	
-};
-
 function NotePage() {
 
 	const navigate = useNavigate();
+	const { userId, vaultKey } = useAuth();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
 	const [showTypes, setShowTypes] = useState<SortOption>('all');
 	const [searchTerm, setSearchTerm] = useState<string>('');
@@ -60,7 +53,7 @@ function NotePage() {
 				
 				if (data.got === "List") {
 				
-					let noteList: Note[] = [];
+					let noteList: DisplayNote[] = [];
 					
 					const size = data.listSize;
 					
@@ -88,9 +81,6 @@ function NotePage() {
 		
 		
 		loadList();
-		
-		
-		
 	}, [])
 
 
@@ -143,73 +133,85 @@ function NotePage() {
 
 
 	async function loadList() {
-
-		const userID = getUserId();
-		const vaultKey = getAuthToken();
 		
-		//Get list from server
-		if (userID) {
+		let allNotes: DisplayNote[] = [];
+
+		// 1. Get list from server
+		if (userId) {
 			try {
-				const response = await loadNotes({ userID });
+				const response = await loadNotes({ userID: userId });
 				
 				if (response.notes) {
-					
-					let noteNames = response.notes.map((n: any) => n.note_title);
-					
-					// dont worry about encrypting/decrypting anthing for now
-
-					
-					/* If we have the key, decrypt. Else show raw (or placeholder)
-					if (vaultKey) {
-						try {
-							// decryptFilenames expects string[], returns Promise<string[]>
-							// This assumes n.note_title is the encrypted base64 string
-							const decrypted = await decryptFilenames(noteNames, vaultKey);
-							noteNames = decrypted;
-						} catch (e) {
-							console.error("Decryption error:", e);
-						}
-					} */
-
-					const fetchedNotes = response.notes.map((n: any, index: number) : Note => ({
-						name: noteNames[index], 
-						modified: n.updated_at,
-						made: n.created_at, // Server only returns one date for now
+					const serverNotes = response.notes.map((n: any) : DisplayNote => ({
+						user_id: n.user_id,
+						id: n.id,
+						note_title: n.note_title,
+						note_text: "",
+						iv_b64: n.iv_b64 || "",
 						pinned: n.pinned,
-						client: false // From server
+						updated_at: n.updated_at,
+						created_at: n.created_at,
+						client: false
 					}));
-					
-					loadListAfterServer(fetchedNotes);
+					allNotes = [...allNotes, ...serverNotes];
 				}
 			} catch (err) {
-				console.error("Failed to load notes:", err);
-				// Fallback to socket or empty list
+				console.error("Failed to load server notes:", err);
 			}
-		} else {
-			// Fallback if no user ID (waiting for socket/login)
-			console.log("No user ID available for API call");
 		}
+
+		// 2. Get list from client storage
+		try {
+			const clientNotesRaw = await getAllNotesClient();
+			const filteredClientNotes = userId ? clientNotesRaw.filter(n => n.user_id === userId) : clientNotesRaw;
+
+			const clientNotes = filteredClientNotes.map((n) : DisplayNote => ({
+				user_id: n.user_id,
+				id: n.id,
+				note_title: n.note_title,
+				note_text: "",
+				iv_b64: n.iv_b64 || "",
+				pinned: n.pinned,
+				updated_at: n.updated_at,
+				created_at: n.created_at,
+				client: true
+			}));
+			allNotes = [...allNotes, ...clientNotes];
+
+		} catch (e) {
+			console.error("Failed to load client notes:", e);
+		}
+
+		// 3. Decrypt names if key is available
+		if (vaultKey && allNotes.length > 0) {
+			try {
+				const encryptedNames = allNotes.map(n => n.note_title);
+				const decryptedNames = await decryptFilenames(encryptedNames, vaultKey);
+				
+				allNotes = allNotes.map((note, index) => ({
+					...note,
+					note_title: decryptedNames[index]
+				}));
+			} catch (e) {
+				console.error("Decryption error:", e);
+			}
+		}
+
+		displayNotes(allNotes);
 	}
 
-	function loadListAfterServer(notes: NoteForSort[], term = searchTerm, sort = sortBy) {
+	function displayNotes(notes: DisplayNote[], term = searchTerm, sort = sortBy) {
 	
-		const filtered: NoteForSort[] = [];
-	
-		
-		//remove notes without search term
-		for (const note of notes) {
-			if (note.name.toLowerCase().includes(term.toLowerCase())) {
-				filtered.push(note);
-			}
-		}
+		const filtered = notes.filter(note =>
+			note.note_title.toLowerCase().includes(term.toLowerCase())
+		);
 	
 		const sorted = sortNotes(filtered, sort);
 		
-		
-		addNotesToList(sorted);
+		renderNoteList(sorted);
 	}
 
-	function addNotesToList(notes: NoteForSort[]) {
+	function renderNoteList(notes: DisplayNote[]) {
 	  
 		const listBox = document.getElementById("noteList");
 		if (!listBox) return;
@@ -231,10 +233,7 @@ function NotePage() {
 			item.className = "list-item";
 			
 			const name = document.createElement("span");
-			name.textContent = note.name;
-			if (note.pinned) {
-				name.textContent = "📌 " + note.name;
-			}
+			name.textContent = note.pinned ? "📌 " + note.note_title : note.note_title;
 			item.appendChild(name);
 			
 			const editButton = document.createElement("button");
@@ -242,9 +241,7 @@ function NotePage() {
 			editButton.className = "edit-button";
 			
 			editButton.addEventListener("click", () => {
-			
-				navigate("/NoteEdit", { state: { noteName: note.name, client: note.client } });
-			
+				navigate("/NoteEdit", { state: { noteId: note.id, noteName: note.note_title, client: note.client } });
 			});
 			
 			item.appendChild(editButton);

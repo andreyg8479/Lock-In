@@ -1,3 +1,5 @@
+import type { EncryptedNote } from "../../shared_types/note_types";
+
 const BASE_URL = "http://localhost:8080";
 
 /*
@@ -62,11 +64,11 @@ export async function getNote(payload: any) {
     return request("POST", "/api/vault/get", payload);
 }
 
-export async function uploadNote(payload: any) {
+export async function uploadNote(payload: Partial<EncryptedNote>) {
     return request("POST", "/api/vault/file", payload);
 }
 
-export async function updateNote(payload: any) {
+export async function updateNote(payload: Partial<EncryptedNote>) {
     return request("PUT", "/api/vault/file", payload);
 }
 

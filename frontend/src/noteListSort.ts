@@ -1,30 +1,23 @@
+import type { DisplayNote } from "../../shared_types/note_types";
+
 export type SortOption = 'byName' | 'byModified' | 'byCreated';
 
-export type NoteForSort = {
-  name: string;
-  modified: Date | string;
-  made: Date | string;
-  pinned: boolean;
-  [key: string]: unknown;
-};
-
-function compareName(a: NoteForSort, b: NoteForSort): number {
-  return a.name.localeCompare(b.name);
+function compareName(a: DisplayNote, b: DisplayNote): number {
+  return a.note_title.localeCompare(b.note_title);
 }
 
-function compareModified(a: NoteForSort, b: NoteForSort): number {
-  return new Date(b.made).getTime() - new Date(a.made).getTime();
+function compareModified(a: DisplayNote, b: DisplayNote): number {
+  return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
 }
 
-function compareCreated(a: NoteForSort, b: NoteForSort): number {
-  return new Date(b.modified).getTime() - new Date(a.modified).getTime();
+function compareCreated(a: DisplayNote, b: DisplayNote): number {
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
 
 export function sortNotes(
-  notes: NoteForSort[],
+  notes: DisplayNote[],
   sortBy: SortOption
-): NoteForSort[] {
-  console.log(sortBy)
+): DisplayNote[] {
   const sorted = [...notes];
 
   switch (sortBy) {

@@ -1,21 +1,8 @@
 
-import { useEffect } from 'react' //useState can also be added here but idk if its needed
-import { connectSocket, sendMessage, setAuthToken } from "./WebSocketConnect";
-
 function Testing() {
-  
-	useEffect(() => {
-		
-		connectSocket((data) => {
-			console.log("Got data");
-			console.log(data);
-		});
-		
-	}, [])
-	
+
 	function clicked() {
-		sendMessage("Test Message");
-		setAuthToken("Testing Token");
+		console.log("Test button clicked");
 	}
 
   return (

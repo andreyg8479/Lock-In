@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react' //useState can also be added here but idk if its needed
+import { useEffect, useState } from 'react'
 import {
  getTheme, 
  setTheme,  
@@ -12,27 +12,12 @@ import {
  getShift,
  setShift
  } from "./SettingsMem";
- import { connectSocket } from "./WebSocketConnect";
 import { useNavigate } from "react-router-dom";
 import './Settings.css'
 
 function Settings() {
 
 	const navigate = useNavigate();
-	
-	
-  
-  
-  
-	useEffect(() => {
-		
-		connectSocket((data) => {
-			console.log("Got data");
-			console.log(data);
-		});
-		
-	}, [])
-	
 	
 	const [prefSize, setSetPrefSize] = useState(getPrefSize());
 	

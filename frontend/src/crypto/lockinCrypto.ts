@@ -199,7 +199,7 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
     const iv = randomBytes(IV_LEN);
 
     // Step 2: encrypt the note itself
-    const contentBuffer = utf8Bytes(uploadedNote.plaintext);
+    const contentBuffer = utf8Bytes(uploadedNote.note_text);
 
     const ciphertextBuffer = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
@@ -209,7 +209,7 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
 
     // Step 3: encrypt the name, with a separate IV to prevent reuse
     const nameIv = randomBytes(IV_LEN);
-    const nameBuffer = utf8Bytes(uploadedNote.name);
+    const nameBuffer = utf8Bytes(uploadedNote.note_title);
 
     const encryptedNameBuffer = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: toArrayBuffer(nameIv) },
@@ -224,22 +224,22 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
     combinedName.set(new Uint8Array(encryptedNameBuffer), nameIv.length);
 
     return {
-        userID: uploadedNote.userID,
-        noteID: uploadedNote.id,
-        encryptedName: toBase64(combinedName),
-        ciphertextB64: toBase64(new Uint8Array(ciphertextBuffer)),
-        ivB64: toBase64(iv),
+        user_id: uploadedNote.user_id,
+        id: uploadedNote.id,
+        note_title: toBase64(combinedName),
+        note_text: toBase64(new Uint8Array(ciphertextBuffer)),
+        iv_b64: toBase64(iv),
         pinned: uploadedNote.pinned,
-        lastModified: uploadedNote.lastModified,
-        createdAt: uploadedNote.createdAt
+        updated_at: uploadedNote.updated_at,
+        created_at: uploadedNote.created_at
     };
 }
 
 export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: CryptoKey): Promise<DecryptedNote> {
     
     // Step 1: extract the IV and ciphertext and decrypt
-    const iv = fromBase64(encryptedNote.ivB64);
-    const ciphertext = fromBase64(encryptedNote.ciphertextB64);
+    const iv = fromBase64(encryptedNote.iv_b64);
+    const ciphertext = fromBase64(encryptedNote.note_text);
 
     const plaintextBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
@@ -250,7 +250,7 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
     const plaintext = new TextDecoder().decode(plaintextBuffer);
 
     // Step 2: decrypt the file name
-    const combinedName = fromBase64(encryptedNote.encryptedName);
+    const combinedName = fromBase64(encryptedNote.note_title);
     const nameIv = combinedName.slice(0, IV_LEN);
     const encryptedName = combinedName.slice(IV_LEN);
 
@@ -263,14 +263,14 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
     const name = new TextDecoder().decode(nameBuffer);
 
     return {
-        userID: encryptedNote.userID,
-        id: encryptedNote.noteID,
-        name: name,
-        plaintext: plaintext,
-        ivB64: encryptedNote.ivB64,
+        user_id: encryptedNote.user_id,
+        id: encryptedNote.id,
+        note_title: name,
+        note_text: plaintext,
+        iv_b64: encryptedNote.iv_b64,
         pinned: encryptedNote.pinned,
-        lastModified: encryptedNote.lastModified,
-        createdAt: encryptedNote.createdAt
+        updated_at: encryptedNote.updated_at,
+        created_at: encryptedNote.created_at
     };
 }
 
