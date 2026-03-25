@@ -22,6 +22,8 @@ function NoteEdit() {
 	const [isNoteInfoHidden, setIsNoteInfoHidden] = useState(false);
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	
+	const [extraPassword, setExtraPassword] = useState(false);
+	
 	const [confirming, setConfirming] = useState(false);
 	const hideCombo = {
 		key: getKey(),
@@ -71,6 +73,7 @@ function NoteEdit() {
 						setContent(noteData.note_text);
 						setPinned(noteData.pinned);
 						setNoteId(noteData.id);
+						setExtraPassword(false); //TODO, make this true if the note already has an extra password
 						
 						console.log("Loaded Note Id: ", noteData.id);
 					}
@@ -149,6 +152,29 @@ function NoteEdit() {
 	const doCancel = () => {
 		setConfirming(false);
 	}
+
+	const addExtraPassword = () => {
+		
+		if (extraPassword) {
+			alert("This note already has an extra password!");
+		} else {
+			const extraPass = prompt("Please enter the new extra password. (THIS CANNOT BE CHANGED");
+			
+			if (extraPass == "") {
+				alert("No new password was added");
+			} else {
+			
+				//SEND THE NEW PASSWORD TO THE DATABASE HERE
+				
+				setExtraPassword(true);
+				
+				alert("An extra password has been set. If you forget this, you will not be able to access this note again");
+			
+			}
+
+		}
+		
+	}
 	
 	const doDelete = async () => {
 		if (!confirming) {
@@ -215,6 +241,10 @@ function NoteEdit() {
 			{confirming && (
 				<button onClick={doCancel}>Cancel</button>
 			)}
+			
+			<button onClick={addExtraPassword}>
+			Add Extra Password
+			</button>
 			{/* more buttons probably */}
 			
 			
