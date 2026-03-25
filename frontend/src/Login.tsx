@@ -33,6 +33,27 @@ const Login: React.FC = () => {
 		event.preventDefault();
 
 		try {
+		
+			const code2fa = generate2faCode();
+		
+			//SEND 2FA email
+			
+			const got2fa = prompt(Please enter the code sent to your email);
+			
+			if (code2fa == got2fa) {
+			
+				alert("2fa successful");
+			
+			} else {
+				
+				throw new Error("2 Factor Authentication Failed");
+				
+			}
+			
+		
+		
+		
+		
 			// Step 1: send an HTTP request to the server to get the crypto metadata
 			// Only the email is sent, as the attempted password should never leave the client
 			const response = await requestLogin({ email });
