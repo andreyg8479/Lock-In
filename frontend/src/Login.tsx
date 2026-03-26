@@ -38,7 +38,7 @@ const Login: React.FC = () => {
 		
 			//SEND 2FA email
 			
-			const got2fa = prompt(Please enter the code sent to your email);
+			const got2fa = prompt("Please enter the code sent to your email");
 			
 			if (code2fa == got2fa) {
 			
