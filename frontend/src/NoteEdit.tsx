@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from "./AuthContext";
-import { useEffect, useRef, useState } from 'react'
-import { getUserId } from "./WebSocketConnect";
+import {  useRef} from 'react'
 import { useLocation, useNavigate } from "react-router-dom";
 import { getNote, uploadNote, updateNote, deleteNote } from "./api";
 import { encryptNote, decryptNote } from "./crypto/lockinCrypto";
@@ -111,18 +110,20 @@ function NoteEdit() {
 
 							setNoteId(noteData.id);
 						}
-					} catch (error) {
-						console.error("Error fetching note:", error);
-					}
+					} 
+				} catch (error) {
+					console.error("Error fetching note:", error);
 				}
-			} else {
-				console.log("no note selected, want to make new note");
 			}
-		};
+		} else {
+			console.log("no note selected, want to make new note");
+		}
+
+	   };
 
 		fetchNote();
 		
-	}, [ogNoteId, ogNoteClient])
+	}, [ogNoteId, ogNoteClient]);
 	
 
 	
