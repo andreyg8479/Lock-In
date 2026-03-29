@@ -79,3 +79,11 @@ export async function deleteNote(payload: any) {
 export async function requestDeleteAccount(payload: any) {
     return request("DELETE", "/api/auth/account", payload);
 }
+
+export async function send2fa(payload: { email: string }) {
+    return request("POST", "/api/auth/2fa/send", payload);
+}
+
+export async function verify2fa(payload: { email: string; code: string }) {
+    return request("POST", "/api/auth/2fa/verify", payload);
+}

@@ -100,6 +100,11 @@ function NotePage() {
 		
 		let allNotes: DisplayNote[] = [];
 
+		if (!userId || !vaultKey) {
+			displayNotes([]);
+			return;
+		}
+
 		// 1. Get list from server
 		if (userId) {
 			try {
@@ -128,7 +133,7 @@ function NotePage() {
 		// 2. Get list from client storage
 		try {
 			const clientNotesRaw = await getAllNotesClient();
-			const filteredClientNotes = userId ? clientNotesRaw.filter(n => n.user_id === userId) : clientNotesRaw;
+			const filteredClientNotes = clientNotesRaw.filter(n => n.user_id === userId);
 
 			const clientNotes = filteredClientNotes.map((n) : DisplayNote => ({
 				user_id: n.user_id,

@@ -315,6 +315,18 @@ function randomBytes(n: number): Uint8Array {
     return out;
 }
 
+const TWO_FA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const TWO_FA_LENGTH = 6;
+
+export function generate2faCode(): string {
+    const bytes = randomBytes(TWO_FA_LENGTH);
+    let code = "";
+    for (let i = 0; i < TWO_FA_LENGTH; i++) {
+        code += TWO_FA_CHARS[bytes[i] % TWO_FA_CHARS.length];
+    }
+    return code;
+}
+
 // convert string to an array of utf8 encoded bytes (ex: ABC becomes 65, 66, 67)
 function utf8Bytes(str: string): Uint8Array {
     return new TextEncoder().encode(str);

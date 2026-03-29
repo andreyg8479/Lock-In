@@ -6,60 +6,45 @@ import { useAuth } from "./AuthContext";
 
 import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
 import { handleLogin } from "./crypto/lockinCrypto";
-import { requestLogin } from "./api";
+import { requestLogin, send2fa, verify2fa } from "./api";
 
 const Login: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [twoFaCode, setTwoFaCode] = useState("");
+	const [step, setStep] = useState<"credentials" | "2fa">("credentials");
+	const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
 	const { setUserId, setVaultKey, setUsername } = useAuth();
-	
-	
-	function generate2faCode() {
-		let code = "";
-		const len = 6;
-		const posChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-		
-		for (let i = 0; i < len; i++) {
-			const rand = Math.floor(Math.random() * (posChars.length - 1 - 0 + 1)) + 0;
-			code += posChars[rand];
-		}
-		
-		return code;
-	}
-	
 
-	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+	const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		if (!email || !password) return;
 
+		setLoading(true);
 		try {
-		
-			const code2fa = generate2faCode();
-		
-			//SEND 2FA email
-			
-			const got2fa = prompt("Please enter the code sent to your email");
-			
-			if (code2fa == got2fa) {
-			
-				alert("2fa successful");
-			
-			} else {
-				
-				throw new Error("2 Factor Authentication Failed");
-				
-			}
-			
-		
-		
-		
-		
-			// Step 1: send an HTTP request to the server to get the crypto metadata
-			// Only the email is sent, as the attempted password should never leave the client
+			await send2fa({ email });
+			setStep("2fa");
+		} catch (error: any) {
+			console.error("Failed to send 2FA code:", error);
+			alert(error.message || "Failed to send verification code");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleVerifyAndLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (!twoFaCode) return;
+
+		setLoading(true);
+		try {
+			// Step 1: Verify the 2FA code server-side
+			await verify2fa({ email, code: twoFaCode });
+
+			// Step 2: Fetch crypto metadata from server
 			const response = await requestLogin({ email });
 
-			// Step 2: Map the server response to the artifacts structure
-			
 			// Validate that all necessary crypto artifacts are present
 			const requiredFields = [
 				"kdf", "iterations", "salt", "cipher", "iv", 
@@ -91,12 +76,9 @@ const Login: React.FC = () => {
 			});
 
 			if (result.ok) {
-				// Save the vault key or session token here if needed
 				setUserId(response.id);
-				
 				setVaultKey(result.payload.vaultKey);
 				setUsername(response.username);
-				// For now just navigate
 				navigate("/");
 			} else {
 				alert(result.payload.errorMessage);
@@ -104,6 +86,8 @@ const Login: React.FC = () => {
 		} catch (error: any) {
 			console.error("Login failed:", error);
 			alert(error.message || "Login failed");
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -113,7 +97,8 @@ const Login: React.FC = () => {
 				<h2 className="auth-title">Login</h2>
 				<p className="auth-subtitle">Welcome back to LockIn</p>
 
-				<form className="auth-form" onSubmit={handleSubmit}>
+				{step === "credentials" && (
+				<form className="auth-form" onSubmit={handleRequestCode}>
 					<label className="auth-label">
 						<span>Email</span>
 						<input
@@ -138,10 +123,42 @@ const Login: React.FC = () => {
 						/>
 					</label>
 
-					<button type="submit" className="auth-button">
-						Login
+					<button type="submit" className="auth-button" disabled={loading}>
+						{loading ? "Sending Code..." : "Login"}
 					</button>
 				</form>
+				)}
+
+				{step === "2fa" && (
+				<form className="auth-form" onSubmit={handleVerifyAndLogin}>
+					<p>A verification code has been sent to <strong>{email}</strong></p>
+					<label className="auth-label">
+						<span>Verification Code</span>
+						<input
+							type="text"
+							value={twoFaCode}
+							onChange={(e) => setTwoFaCode(e.target.value.toUpperCase())}
+							placeholder="Enter 6-character code"
+							maxLength={6}
+							required
+							className="auth-input"
+							autoFocus
+						/>
+					</label>
+
+					<button type="submit" className="auth-button" disabled={loading}>
+						{loading ? "Verifying..." : "Verify & Login"}
+					</button>
+					<button
+						type="button"
+						className="auth-button"
+						onClick={() => { setStep("credentials"); setTwoFaCode(""); }}
+					>
+						Back
+					</button>
+				</form>
+				)}
+
                 <div className="SignUp">
                 <Link to="/SignUp">(Sign Up)</Link>
                 </div>
