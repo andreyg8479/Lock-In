@@ -230,6 +230,7 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
         note_text: toBase64(new Uint8Array(ciphertextBuffer)),
         iv_b64: toBase64(iv),
         pinned: uploadedNote.pinned,
+        note_type: uploadedNote.note_type,
         updated_at: uploadedNote.updated_at,
         created_at: uploadedNote.created_at
     };
@@ -269,6 +270,7 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
         note_text: plaintext,
         iv_b64: encryptedNote.iv_b64,
         pinned: encryptedNote.pinned,
+        note_type: encryptedNote.note_type,
         updated_at: encryptedNote.updated_at,
         created_at: encryptedNote.created_at
     };

@@ -1,3 +1,5 @@
+export type NoteType = 'text' | 'audio' | 'image';
+
 export type EncryptedNote = {
     user_id: string,
     id: string,
@@ -5,6 +7,7 @@ export type EncryptedNote = {
     note_text: string,
     iv_b64: string,
     pinned: boolean,
+    note_type: NoteType,
     updated_at: string,
     created_at: string
 };
@@ -16,6 +19,7 @@ export type DecryptedNote = {
     note_text: string,
     iv_b64: string,
     pinned: boolean,
+    note_type: NoteType,
     updated_at: string,
     created_at: string
 };

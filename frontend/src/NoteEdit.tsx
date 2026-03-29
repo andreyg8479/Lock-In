@@ -80,20 +80,10 @@ function NoteEdit() {
 					try {
 						console.log("Requesting Note via API");
 						const response = await getNote({ noteId: ogNoteId, userID: userId });
-					// VaultController.ts:getNote returns { note: notes } where 'notes' is likely an array from supabase.select('*')
-					if (response.note && response.note.length > 0) {
-						const noteData = response.note[0];
-						
-						// Map database columns to state
-						// DB columns based on VaultController.ts: 'note_text', 'pinned', 'id'
-						setContent(noteData.note_text);
-						setPinned(noteData.pinned);
-						setNoteId(noteData.id);
-						setExtraPassword(false); //TODO, make this true if the note already has an extra password
-						
+
 						if (response.note && response.note.length > 0) {
 							const noteData = response.note[0] as EncryptedNote;
-							
+
 							if (vaultKey) {
 								try {
 									const decrypted = await decryptNote(noteData, vaultKey);
@@ -109,11 +99,11 @@ function NoteEdit() {
 							}
 
 							setNoteId(noteData.id);
+							setExtraPassword(false); //TODO, make this true if the note already has an extra password
 						}
-					} 
-				} catch (error) {
-					console.error("Error fetching note:", error);
-				}
+					} catch (error) {
+						console.error("Error fetching note:", error);
+					}
 			}
 		} else {
 			console.log("no note selected, want to make new note");
@@ -148,6 +138,7 @@ function NoteEdit() {
 				note_text: content,
 				iv_b64: "",
 				pinned: pinned,
+				note_type: 'text',
 				updated_at: now,
 				created_at: now
 			};
@@ -188,6 +179,7 @@ function NoteEdit() {
 				note_text: content,
 				iv_b64: "",
 				pinned: pinned,
+				note_type: 'text',
 				updated_at: now,
 				created_at: now
 			};

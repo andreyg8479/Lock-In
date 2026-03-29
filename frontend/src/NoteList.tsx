@@ -5,7 +5,7 @@ import { sortNotes, type SortOption } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
 import { getAllNotesClient } from "./client_storage";
 import { decryptFilenames } from "./crypto/lockinCrypto";
-import type { DisplayNote } from "../../shared_types/note_types";
+import type { DisplayNote, NoteType } from "../../shared_types/note_types";
 import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getKey, getShift } from './SettingsMem'
@@ -16,7 +16,7 @@ function NotePage() {
 	const navigate = useNavigate();
 	const { userId, vaultKey } = useAuth();
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
-	const [showTypes, setShowTypes] = useState<SortOption>('all');
+	const [showTypes, setShowTypes] = useState<NoteType | 'all'>('all');
 	const [searchTerm, setSearchTerm] = useState<string>('');
 	
 	const [isListHidden, setIsListHidden] = useState<boolean>(false);
@@ -44,42 +44,6 @@ function NotePage() {
 	}, { preventDefault: true });
   
 	useEffect(() => {
-		
-		connectSocket((data) => {
-		
-			if (typeof data === "object") {	
-				
-				//console.log(data.got);
-				
-				if (data.got === "List") {
-				
-					let noteList: DisplayNote[] = [];
-					
-					const size = data.listSize;
-					
-					for (let i = 0; i < size; i++) {
-
-				
-						//console.log("i = ", i);					
-						noteList.push({
-							name: data.listNames[i],
-							modified: data.listMod[i],
-							made: data.listMade[i],
-							pinned: data.listPinned[i],
-							client: false,
-							noteType: 'text' //CHANGE THIS TO DATA FROM DATABASE
-						});
-					}
-
-					loadListAfterServer(noteList, searchTermRef.current, sortByRef.current);
-				}
-				
-			} else {			
-				console.log("Received:", data);
-			} 
-		});
-		
-		
 		loadList();
 	}, [])
 
@@ -149,6 +113,7 @@ function NotePage() {
 						note_text: "",
 						iv_b64: n.iv_b64 || "",
 						pinned: n.pinned,
+						note_type: n.note_type || 'text',
 						updated_at: n.updated_at,
 						created_at: n.created_at,
 						client: false
@@ -172,6 +137,7 @@ function NotePage() {
 				note_text: "",
 				iv_b64: n.iv_b64 || "",
 				pinned: n.pinned,
+				note_type: n.note_type || 'text',
 				updated_at: n.updated_at,
 				created_at: n.created_at,
 				client: true
@@ -223,8 +189,8 @@ function NotePage() {
 		
 		for (const note of notes) {
 		
-			if (showTypes != 'all') {
-				if (item.noteType != showTypes) {
+			if (showTypes !== 'all') {
+				if (note.note_type !== showTypes) {
 					continue;
 				}
 			}
@@ -299,7 +265,7 @@ function NotePage() {
 			
 			<select
 				value={showTypes}
-				onChange={(e) => setShowTypes(e.target.value)}
+				onChange={(e) => setShowTypes(e.target.value as NoteType | 'all')}
 			>
 				<option value="all">All Types</option>
 				<option value="text">Text Only</option>
