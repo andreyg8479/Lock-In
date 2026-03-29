@@ -11,7 +11,7 @@ export async function getAllNoteNames(req: Request, res: Response) {
 
     const { data: notes, error } = await supabase
         .from('notes')
-        .select('id, note_title, pinned, created_at, updated_at')
+        .select('id, note_title, iv_b64, pinned, note_type, created_at, updated_at')
         .eq('user_id', userID)
         .order('created_at', { ascending: false });
 
@@ -66,6 +66,7 @@ export async function uploadNote(req: Request, res: Response) {
             note_text: req.body.note_text,
             iv_b64: req.body.iv_b64,
             pinned: req.body.pinned,
+            note_type: req.body.note_type || 'text',
             user_id: req.body.user_id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -97,6 +98,7 @@ export async function updateNote(req: Request, res: Response) {
             note_text: req.body.note_text,
             iv_b64: req.body.iv_b64,
             pinned: req.body.pinned,
+            note_type: req.body.note_type || 'text',
             updated_at: new Date().toISOString()
         })
         .eq('id', req.body.id)
