@@ -10,6 +10,63 @@ import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getKey, getShift } from './SettingsMem'
 
+/** Set to false when login works again — shows demo server + client rows without auth. */
+const FAKE_NOTE_LIST_PREVIEW = true
+
+function fakeDemoNotes(): DisplayNote[] {
+	const now = Date.now()
+	const iso = (offsetMs: number) => new Date(now + offsetMs).toISOString()
+	return [
+		{
+			user_id: "preview-user",
+			id: "fake-preview-server-1",
+			note_title: "Weekly standup",
+			note_text: "",
+			iv_b64: "",
+			pinned: true,
+			note_type: "text",
+			updated_at: iso(-86_400_000),
+			created_at: iso(-1_209_600_000),
+			client: false,
+		},
+		{
+			user_id: "preview-user",
+			id: "fake-preview-server-2",
+			note_title: "Bookmarks",
+			note_text: "",
+			iv_b64: "",
+			pinned: false,
+			note_type: "text",
+			updated_at: iso(-3_600_000),
+			created_at: iso(-604_800_000),
+			client: false,
+		},
+		{
+			user_id: "preview-user",
+			id: "fake-preview-client-1",
+			note_title: "Scratch pad",
+			note_text: "",
+			iv_b64: "",
+			pinned: false,
+			note_type: "text",
+			updated_at: iso(-120_000),
+			created_at: iso(-2_592_000_000),
+			client: true,
+		},
+		{
+			user_id: "preview-user",
+			id: "fake-preview-client-2",
+			note_title: "Voice memo (audio)",
+			note_text: "",
+			iv_b64: "",
+			pinned: false,
+			note_type: "audio",
+			updated_at: iso(-500),
+			created_at: iso(-86_400_000),
+			client: true,
+		},
+	]
+}
 
 function NotePage() {
 
@@ -97,7 +154,11 @@ function NotePage() {
 
 
 	async function loadList() {
-		
+		if (FAKE_NOTE_LIST_PREVIEW) {
+			displayNotes(fakeDemoNotes())
+			return
+		}
+
 		let allNotes: DisplayNote[] = [];
 
 		if (!userId || !vaultKey) {
@@ -202,18 +263,37 @@ function NotePage() {
 		
 			const item = document.createElement("div");
 			item.className = "list-item";
-			
+
+			const left = document.createElement("div");
+			left.className = "list-item-left";
+
+			const storageIcon = document.createElement("span");
+			storageIcon.className = "note-storage-icon";
+			storageIcon.textContent = note.client ? "💾" : "☁️";
+			storageIcon.title = note.client
+				? "Saved on this device (client)"
+				: "Saved on server";
+			storageIcon.setAttribute("aria-label", storageIcon.title);
+			left.appendChild(storageIcon);
+
 			const name = document.createElement("span");
+			name.className = "list-item-title";
 			name.textContent = note.pinned ? "📌 " + note.note_title : note.note_title;
-			item.appendChild(name);
+			left.appendChild(name);
+
+			item.appendChild(left);
 			
 			const editButton = document.createElement("button");
 			editButton.textContent = "🖉";
 			editButton.className = "edit-button";
-			
-			editButton.addEventListener("click", () => {
-				navigate("/NoteEdit", { state: { noteId: note.id, noteName: note.note_title, client: note.client } });
-			});
+			if (FAKE_NOTE_LIST_PREVIEW) {
+				editButton.disabled = true;
+				editButton.title = "Preview only — login to open notes";
+			} else {
+				editButton.addEventListener("click", () => {
+					navigate("/NoteEdit", { state: { noteId: note.id, noteName: note.note_title, client: note.client } });
+				});
+			}
 			
 			item.appendChild(editButton);
 			
