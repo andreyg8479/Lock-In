@@ -28,10 +28,12 @@ function NoteEdit() {
 	const [content, setContent] = useState("");
 	const [isNoteInfoHidden, setIsNoteInfoHidden] = useState(false);
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
+	const audioFileInputRef = useRef<HTMLInputElement | null>(null);
 	
 	const [extraPassword, setExtraPassword] = useState(false);
 	
 	const [confirming, setConfirming] = useState(false);
+	const [attachFileKind, setAttachFileKind] = useState<'audio' | 'image'>('audio');
 	const hideCombo = {
 		key: getKey(),
 		shift: getShift(),
@@ -206,9 +208,23 @@ function NoteEdit() {
 	const toggleNoteInfoVisibility = () => {
 		setIsNoteInfoHidden((prev) => !prev);
 	}
+
+	const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
+		const bytes = new Uint8Array(buffer);
+		const chunkSize = 0x8000;
+		let binary = "";
+
+		for (let i = 0; i < bytes.length; i += chunkSize) {
+			const chunk = bytes.subarray(i, i + chunkSize);
+			binary += String.fromCharCode(...chunk);
+		}
+
+		return btoa(binary);
+	}
 	
 	const attachFile = () => {
-		//Not a this week problem
+		if (attachFileKind !== 'audio') return;
+		audioFileInputRef.current?.click();
 	}
 
 	const doCancel = () => {
@@ -260,6 +276,45 @@ function NoteEdit() {
 
   return (
 	<div className="note-page">
+		<input
+			ref={audioFileInputRef}
+			type="file"
+			accept=".mp3,audio/mpeg"
+			style={{ display: 'none' }}
+			onChange={async (e) => {
+				const file = e.target.files?.[0];
+				if (!file || attachFileKind !== 'audio') {
+					e.target.value = '';
+					return;
+				}
+
+				try {
+					const buffer = await file.arrayBuffer();
+					const now = new Date().toISOString();
+					const audioAsString = arrayBufferToBase64(buffer);
+
+					// TODO: String object for saving on DB and encrypting (you can use this to save, encrypt, decrypt, view)
+					const audioNoteDraft: DecryptedNote = {
+						user_id: userId || "offline-user",
+						id: noteId ?? "",
+						note_title: title,
+						note_text: audioAsString,
+						iv_b64: "",
+						pinned: pinned,
+						note_type: 'audio',
+						updated_at: now,
+						created_at: now
+					};
+
+					setContent(audioNoteDraft.note_text);
+				} catch (error) {
+					console.error("Failed to convert audio file:", error);
+					alert("Failed to process selected audio file.");
+				} finally {
+					e.target.value = '';
+				}
+			}}
+		/>
 	
 		<input
 			className={`note-title ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
@@ -287,8 +342,15 @@ function NoteEdit() {
 			</button>
 			
 			<button onClick={attachFile}>
-			Attach File
+			Make File Note
 			</button>
+			<select
+				value={attachFileKind}
+				onChange={(e) => setAttachFileKind(e.target.value as 'audio' | 'image')}
+			>
+				<option value="audio">Audio</option>
+				<option value="image">Image</option>
+			</select>
 			
 			<button onClick={doDelete}>
 			{confirming ? "Positive?" : "Delete"}
