@@ -137,6 +137,19 @@ const SignUp: React.FC = () => {
 							className="auth-input"
 						/>
 					</label>
+					
+					<button
+						type="button"
+						onClick={() => {
+							const p = generatePassword();
+							setPassword(p);
+							setConfirmPassword(p);
+							alert("New password is:    " + p);
+						}}
+						className="auth-button"
+					>
+						Generate Password
+					</button>
 
 					<button type="button" onClick={handleSubmit as any} className="auth-button">
 						Sign Up
