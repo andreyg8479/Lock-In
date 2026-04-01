@@ -12,6 +12,31 @@ const SignUp: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+	
+	
+	function generatePassword() {
+		let code = "";
+		const len = 16;
+		let posChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*?-_+=";
+		
+		for (let i = 0; i < len; i++) {
+			const rand = Math.floor(Math.random() * (posChars.length - 1 - 0 + 1)) + 0;
+			code += posChars[rand];
+			posChars = posChars.slice(0, rand) + posChars.slice(rand + 1);
+		}
+		
+		return code;
+	}
+	
+	console.log(generatePassword());
+	console.log(generatePassword());
+	console.log(generatePassword());
+	console.log(generatePassword());
+	console.log(generatePassword());
+	console.log(generatePassword());
+	console.log(generatePassword());
+	console.log(generatePassword());
+	
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
