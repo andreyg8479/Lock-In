@@ -291,6 +291,13 @@ function NotePage() {
 				editButton.title = "Preview only — login to open notes";
 			} else {
 				editButton.addEventListener("click", () => {
+					if (note.extraPassword != "") {
+						extraPassInput = prompt("Please enter this note's extra password");
+						if (extraPassInput != note.extraPassword) {
+							alert("Extra Password Incorrect");
+							return;
+						}
+					}
 					navigate("/NoteEdit", { state: { noteId: note.id, noteName: note.note_title, client: note.client } });
 				});
 			}
