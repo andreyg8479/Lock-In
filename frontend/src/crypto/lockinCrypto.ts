@@ -198,8 +198,13 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
     // Step 1: Generate a new random IV (this will never be reused anywhere for security)
     const iv = randomBytes(IV_LEN);
 
-    // Step 2: encrypt the note itself
-    const contentBuffer = utf8Bytes(uploadedNote.note_text);
+    // Step 2: encrypt the note content
+    // For audio/image, note_text is a base64 string of raw binary — decode to raw bytes
+    // before encrypting to avoid encrypting the ~33% inflated base64 representation.
+    // For text, encode as UTF-8 bytes.
+    const contentBuffer = uploadedNote.note_type === 'text'
+        ? utf8Bytes(uploadedNote.note_text)
+        : fromBase64(uploadedNote.note_text);
 
     const ciphertextBuffer = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: toArrayBuffer(iv) },
@@ -249,7 +254,11 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
         toArrayBuffer(ciphertext)
     );
 
-    const plaintext = new TextDecoder().decode(plaintextBuffer);
+    // For audio/image, the decrypted bytes are raw binary — re-encode to base64.
+    // For text, decode as UTF-8 string.
+    const plaintext = encryptedNote.note_type === 'text'
+        ? new TextDecoder().decode(plaintextBuffer)
+        : toBase64(new Uint8Array(plaintextBuffer));
 
     // Step 2: decrypt the file name
     const combinedName = fromBase64(encryptedNote.note_title);

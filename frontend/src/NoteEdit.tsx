@@ -5,7 +5,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { getNote, uploadNote, updateNote, deleteNote } from "./api";
 import { encryptNote, decryptNote, encryptSecondPassword } from "./crypto/lockinCrypto";
 import { saveNoteClient, getNoteClient } from "./client_storage";
-import type { EncryptedNote, DecryptedNote } from "../../shared_types/note_types";
+import type { EncryptedNote, DecryptedNote, NoteType } from "../../shared_types/note_types";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 import './NoteEdit.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getKey, getShift } from './SettingsMem'
@@ -26,9 +28,11 @@ function NoteEdit() {
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
 	const [content, setContent] = useState("");
+	const [noteType, setNoteType] = useState<NoteType>('text');
 	const [isNoteInfoHidden, setIsNoteInfoHidden] = useState(false);
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	const audioFileInputRef = useRef<HTMLInputElement | null>(null);
+	const imageFileInputRef = useRef<HTMLInputElement | null>(null);
 	
 	const [extraPassword, setExtraPassword] = useState(false);
 	const [secondPasswordB64, setSecondPasswordB64] = useState<string | null>(null);
@@ -69,6 +73,7 @@ function NoteEdit() {
 							setContent(decrypted.note_text);
 							setPinned(decrypted.pinned);
 							setTitle(decrypted.note_title);
+							setNoteType(encryptedNote.note_type || 'text');
 							if (encryptedNote.second_password) {
 								setSecondPasswordB64(encryptedNote.second_password);
 								setExtraPassword(true);
@@ -96,8 +101,7 @@ function NoteEdit() {
 									const decrypted = await decryptNote(noteData, vaultKey);
 									setContent(decrypted.note_text);
 									setPinned(decrypted.pinned);
-									setTitle(decrypted.note_title);
-								} catch (e) {
+									setTitle(decrypted.note_title);								setNoteType(noteData.note_type || 'text');								} catch (e) {
 									console.error("Decryption failed:", e);
 									alert("Failed to decrypt note. Check your key.");
 								}
@@ -148,7 +152,7 @@ function NoteEdit() {
 				note_text: content,
 				iv_b64: "",
 				pinned: pinned,
-				note_type: 'text',
+				note_type: noteType,
 				updated_at: now,
 				created_at: now,
 				second_password: secondPasswordB64
@@ -190,7 +194,7 @@ function NoteEdit() {
 				note_text: content,
 				iv_b64: "",
 				pinned: pinned,
-				note_type: 'text',
+				note_type: noteType,
 				updated_at: now,
 				created_at: now,
 				second_password: secondPasswordB64
@@ -233,8 +237,11 @@ function NoteEdit() {
 	}
 	
 	const attachFile = () => {
-		if (attachFileKind !== 'audio') return;
-		audioFileInputRef.current?.click();
+		if (attachFileKind === 'audio') {
+			audioFileInputRef.current?.click();
+		} else if (attachFileKind === 'image') {
+			imageFileInputRef.current?.click();
+		}
 	}
 
 	const doCancel = () => {
@@ -296,34 +303,44 @@ function NoteEdit() {
 			style={{ display: 'none' }}
 			onChange={async (e) => {
 				const file = e.target.files?.[0];
-				if (!file || attachFileKind !== 'audio') {
+				if (!file) { e.target.value = ''; return; }
+				if (file.size > MAX_FILE_SIZE) {
+					alert("File exceeds 10 MB limit.");
 					e.target.value = '';
 					return;
 				}
-
 				try {
 					const buffer = await file.arrayBuffer();
-					const now = new Date().toISOString();
-					const audioAsString = arrayBufferToBase64(buffer);
-
-					// TODO: String object for saving on DB and encrypting (you can use this to save, encrypt, decrypt, view)
-					const audioNoteDraft: DecryptedNote = {
-						user_id: userId || "offline-user",
-						id: noteId ?? "",
-						note_title: title,
-						note_text: audioAsString,
-						iv_b64: "",
-						pinned: pinned,
-						note_type: 'audio',
-						updated_at: now,
-						created_at: now,
-						second_password: secondPasswordB64
-					};
-
-					setContent(audioNoteDraft.note_text);
+					setContent(arrayBufferToBase64(buffer));
+					setNoteType('audio');
 				} catch (error) {
-					console.error("Failed to convert audio file:", error);
+					console.error("Failed to process audio file:", error);
 					alert("Failed to process selected audio file.");
+				} finally {
+					e.target.value = '';
+				}
+			}}
+		/>
+		<input
+			ref={imageFileInputRef}
+			type="file"
+			accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+			style={{ display: 'none' }}
+			onChange={async (e) => {
+				const file = e.target.files?.[0];
+				if (!file) { e.target.value = ''; return; }
+				if (file.size > MAX_FILE_SIZE) {
+					alert("File exceeds 10 MB limit.");
+					e.target.value = '';
+					return;
+				}
+				try {
+					const buffer = await file.arrayBuffer();
+					setContent(arrayBufferToBase64(buffer));
+					setNoteType('image');
+				} catch (error) {
+					console.error("Failed to process image file:", error);
+					alert("Failed to process selected image file.");
 				} finally {
 					e.target.value = '';
 				}
@@ -386,14 +403,26 @@ function NoteEdit() {
 			
 		</div>
 		
-		<textarea
-		
-			className={`note-text ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
-			placeholder="Write note here"
-			value={content}
-			onChange={(e) => setContent(e.target.value)}
-		
-		/>
+		{noteType === 'text' && (
+			<textarea
+				className={`note-text ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
+				placeholder="Write note here"
+				value={content}
+				onChange={(e) => setContent(e.target.value)}
+			/>
+		)}
+
+		{noteType === 'audio' && content && (
+			<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+				<audio controls src={`data:audio/mpeg;base64,${content}`} />
+			</div>
+		)}
+
+		{noteType === 'image' && content && (
+			<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+				<img src={`data:image/png;base64,${content}`} alt={title} className="note-image" />
+			</div>
+		)}
 	</div>
   )
 }

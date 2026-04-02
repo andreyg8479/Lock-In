@@ -56,3 +56,26 @@
 .note-info-hidden {
 	visibility: hidden;
 }
+
+.note-media {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	background-color: var(--color-input-bg);
+	overflow: auto;
+}
+
+.note-media audio {
+	width: 100%;
+	max-width: 500px;
+}
+
+.note-image {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
