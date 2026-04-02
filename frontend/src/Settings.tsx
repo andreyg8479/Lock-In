@@ -1,8 +1,10 @@
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
  getTheme, 
- setTheme,  
+ setTheme,
+ applyTheme,
+ normalizeTheme,
  getPrefSize,
  setPrefSize,
  getKey,
@@ -26,14 +28,6 @@ function Settings() {
 	const [alt, setSetAlt] = useState(getAlt());
 	
 	const [theme, setSetTheme] = useState(getTheme());
-	
-	
-	
-	
-	function loadPage() {
-		//Fill the settings with their current values
-	}
-	
 	
 	function homeButton() {
 		navigate("/");
@@ -61,6 +55,7 @@ function Settings() {
 		//make sure the inputs are valid, then send them to the the WebSocketConnect
 		
 		setTheme(theme);
+		applyTheme(theme);
 		
 		setPrefSize(prefSize);
 		
@@ -95,12 +90,12 @@ Preferred Text Size:
 Hide Screen Keybind: 							&emsp;&emsp;&emsp;
 				<div id="thing"> Require Shift: <input type="checkbox" id="shift" checked={shift} onChange={(e) => setSetShift(e.target.checked)}/> </div>
 				<div id="thing"> Require Alt: <input type="checkbox" id="alt" checked={alt} onChange={(e) => setSetAlt(e.target.checked)}/> </div>
-				<div id="thing"> Key: <input type="text" id="charInput" maxLength="1" size="1" value ={key} onChange={(e) => setSetKey(e.target.value.toUpperCase())} /> </div>
+				<div id="thing"> Key: <input type="text" id="charInput" maxLength={1} size={1} value ={key} onChange={(e) => setSetKey(e.target.value.toUpperCase())} /> </div>
 			</div>
 			
 			<div className="settings-row">
 Theme:
-				<select id="theme" value={theme} onChange={(e) => setSetTheme(e.target.value)}>
+				<select id="theme" value={theme} onChange={(e) => setSetTheme(normalizeTheme(e.target.value))}>
 				  <option value="light">Light</option>
 				  <option value="dark">Dark</option>
 				</select>

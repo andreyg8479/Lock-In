@@ -16,7 +16,7 @@ html, body {
 	justify-content: space-between;
 	align-items: center;
 	padding: 30px 20px;
-	border: 1px solid;
+	border: 1px solid var(--color-border);
 }
 
 .top-bar h1 {
@@ -29,14 +29,16 @@ html, body {
 	display: flex;
 	padding: 30px 20px;
 	gap: 10px;
-	border-bottom: 1px solid;
+	border-bottom: 1px solid var(--color-border);
 }
 
 .controls input {
 	flex: 1;
 	padding: 8px;
 	border-radius: 5px;
-	border: 1px solid;
+	border: 1px solid var(--color-input-border);
+	background-color: var(--color-input-bg);
+	color: var(--color-text);
 }
 
 .list-container {
@@ -51,6 +53,8 @@ html, body {
 	border-radius: 8px;
 	padding: 15px;
 	overflow-y: auto;
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
 }
 
 .list-box-hidden {
@@ -64,7 +68,8 @@ html, body {
 	padding: 10px;
 	margin-bottom: 8px;
 	border-radius: 5px;
-	border: 1px solid;
+	border: 1px solid var(--color-border);
+	background-color: var(--color-bg);
 }
 
 .list-item-left {

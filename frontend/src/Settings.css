@@ -16,7 +16,7 @@ html, body {
 	justify-content: space-between;
 	align-items: center;
 	padding: 30px 20px;
-	border: 1px solid;
+	border: 1px solid var(--color-border);
 }
 
 .top-bar h1 {
@@ -32,7 +32,7 @@ html, body {
 }
 
 .settings-row {
-	border: 1px solid #ddd;
+	border: 1px solid var(--color-border);
 	border-radius: 8px;
 	display: flex;
 	align-items: left;
@@ -50,9 +50,14 @@ html, body {
 	font-weight: 500;
 }
 
-.settings-row input {
+.settings-row input,
+.settings-row select {
 	flex: 1;
 	padding: 6px 8px;
+	background-color: var(--color-input-bg);
+	color: var(--color-text);
+	border: 1px solid var(--color-input-border);
+	border-radius: 6px;
 }
 
 .settings-row button {

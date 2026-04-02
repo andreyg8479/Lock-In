@@ -7,7 +7,9 @@
 
 .delete-container {
   text-align: center;
-  background: white;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   padding: 40px;
   border-radius: 10px;
 }
@@ -35,7 +37,7 @@ button {
 }
 
 .back:hover {
-  background: #ccc;
+  background: var(--color-border);
 }
 
 .delete {

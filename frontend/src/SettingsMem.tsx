@@ -1,17 +1,23 @@
 
 //for settings
 
-export function getTheme() {
-	const theme = localStorage.getItem('theme');
-	if (theme) {
-		return theme;	
-	} else {
-		return "light";
-	}
+export type Theme = "light" | "dark";
+
+export function normalizeTheme(raw: string | null | undefined): Theme {
+	return raw === "dark" ? "dark" : "light";
 }
 
-export function setTheme(theme) {
-	localStorage.setItem('theme', theme);
+export function getTheme(): Theme {
+	return normalizeTheme(localStorage.getItem("theme"));
+}
+
+export function setTheme(theme: Theme) {
+	localStorage.setItem("theme", theme);
+}
+
+export function applyTheme(theme: 'light' | 'dark') {
+
+	document.documentElement.setAttribute('data-theme', theme)
 }
 
 export function getPrefSize() {
@@ -23,7 +29,7 @@ export function getPrefSize() {
 	}
 }
 
-export function setPrefSize(prefSize) {
+export function setPrefSize(prefSize: number) {
 	localStorage.setItem('prefSize', prefSize.toString());
 }
 
@@ -36,7 +42,7 @@ export function getKey() {
 	}
 }
 
-export function setKey(key) {
+export function setKey(key: string) {
 	localStorage.setItem('key', key);
 }
 
@@ -49,7 +55,7 @@ export function getShift() {
 	}
 }
 
-export function setShift(shift) {
+export function setShift(shift: boolean) {
 	localStorage.setItem('shift', shift.toString());
 }
 
@@ -62,7 +68,7 @@ export function getAlt() {
 	}
 }
 
-export function setAlt(alt) {
+export function setAlt(alt: boolean) {
 	localStorage.setItem('alt', alt.toString());
 }
 
