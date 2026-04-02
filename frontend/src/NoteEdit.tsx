@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext";
 import {  useRef} from 'react'
 import { useLocation, useNavigate } from "react-router-dom";
 import { getNote, uploadNote, updateNote, deleteNote } from "./api";
-import { encryptNote, decryptNote } from "./crypto/lockinCrypto";
+import { encryptNote, decryptNote, encryptSecondPassword } from "./crypto/lockinCrypto";
 import { saveNoteClient, getNoteClient } from "./client_storage";
 import type { EncryptedNote, DecryptedNote } from "../../shared_types/note_types";
 import './NoteEdit.css'
@@ -31,6 +31,7 @@ function NoteEdit() {
 	const audioFileInputRef = useRef<HTMLInputElement | null>(null);
 	
 	const [extraPassword, setExtraPassword] = useState(false);
+	const [secondPasswordB64, setSecondPasswordB64] = useState<string | null>(null);
 	
 	const [confirming, setConfirming] = useState(false);
 	const [attachFileKind, setAttachFileKind] = useState<'audio' | 'image'>('audio');
@@ -68,6 +69,10 @@ function NoteEdit() {
 							setContent(decrypted.note_text);
 							setPinned(decrypted.pinned);
 							setTitle(decrypted.note_title);
+							if (encryptedNote.second_password) {
+								setSecondPasswordB64(encryptedNote.second_password);
+								setExtraPassword(true);
+							}
 						}
 					} catch (e) {
 						console.error("Client load error:", e);
@@ -101,7 +106,10 @@ function NoteEdit() {
 							}
 
 							setNoteId(noteData.id);
-							setExtraPassword(false); //TODO, make this true if the note already has an extra password
+							if (noteData.second_password) {
+								setSecondPasswordB64(noteData.second_password);
+								setExtraPassword(true);
+							}
 						}
 					} catch (error) {
 						console.error("Error fetching note:", error);
@@ -142,7 +150,8 @@ function NoteEdit() {
 				pinned: pinned,
 				note_type: 'text',
 				updated_at: now,
-				created_at: now
+				created_at: now,
+				second_password: secondPasswordB64
 			};
 
 			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
@@ -183,7 +192,8 @@ function NoteEdit() {
 				pinned: pinned,
 				note_type: 'text',
 				updated_at: now,
-				created_at: now
+				created_at: now,
+				second_password: secondPasswordB64
 			};
 
 			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
@@ -231,25 +241,28 @@ function NoteEdit() {
 		setConfirming(false);
 	}
 
-	const addExtraPassword = () => {
+	const addExtraPassword = async () => {
 		
 		if (extraPassword) {
 			alert("This note already has an extra password!");
 		} else {
-			const extraPass = prompt("Please enter the new extra password. (THIS CANNOT BE CHANGED");
+			const extraPass = prompt("Please enter the new extra password. (THIS CANNOT BE CHANGED)");
 			
-			if (extraPass == "") {
+			if (!extraPass) {
 				alert("No new password was added");
+			} else if (!vaultKey) {
+				alert("Encryption key not available. Please log in again.");
 			} else {
-			
-				//SEND THE NEW PASSWORD TO THE DATABASE HERE
-				
-				setExtraPassword(true);
-				
-				alert("An extra password has been set. If you forget this, you will not be able to access this note again");
-			
+				try {
+					const encryptedPass = await encryptSecondPassword(extraPass, vaultKey);
+					setSecondPasswordB64(encryptedPass);
+					setExtraPassword(true);
+					alert("An extra password has been set. Save the note to persist this change. If you forget this password, you will not be able to access this note again.");
+				} catch (e) {
+					console.error("Failed to encrypt second password:", e);
+					alert("Failed to set extra password.");
+				}
 			}
-
 		}
 		
 	}
@@ -303,7 +316,8 @@ function NoteEdit() {
 						pinned: pinned,
 						note_type: 'audio',
 						updated_at: now,
-						created_at: now
+						created_at: now,
+						second_password: secondPasswordB64
 					};
 
 					setContent(audioNoteDraft.note_text);

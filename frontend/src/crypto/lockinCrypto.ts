@@ -232,7 +232,8 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
         pinned: uploadedNote.pinned,
         note_type: uploadedNote.note_type,
         updated_at: uploadedNote.updated_at,
-        created_at: uploadedNote.created_at
+        created_at: uploadedNote.created_at,
+        second_password: uploadedNote.second_password
     };
 }
 
@@ -272,7 +273,8 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
         pinned: encryptedNote.pinned,
         note_type: encryptedNote.note_type,
         updated_at: encryptedNote.updated_at,
-        created_at: encryptedNote.created_at
+        created_at: encryptedNote.created_at,
+        second_password: encryptedNote.second_password
     };
 }
 
@@ -304,6 +306,45 @@ export async function decryptFilenames(encryptedFilenames: string[], vaultKey: C
     }
 
     return decryptedNames;
+}
+
+export async function encryptSecondPassword(password: string, vaultKey: CryptoKey): Promise<string> {
+    const iv = randomBytes(IV_LEN);
+    const passwordBytes = utf8Bytes(password);
+
+    const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        vaultKey,
+        toArrayBuffer(passwordBytes)
+    );
+
+    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(ciphertext), iv.length);
+    return toBase64(combined);
+}
+
+export async function decryptSecondPassword(encryptedB64: string, vaultKey: CryptoKey): Promise<string> {
+    const combined = fromBase64(encryptedB64);
+    const iv = combined.slice(0, IV_LEN);
+    const ciphertext = combined.slice(IV_LEN);
+
+    const plaintextBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        vaultKey,
+        toArrayBuffer(ciphertext)
+    );
+
+    return new TextDecoder().decode(plaintextBuffer);
+}
+
+export async function verifySecondPassword(attempt: string, encryptedB64: string, vaultKey: CryptoKey): Promise<boolean> {
+    try {
+        const stored = await decryptSecondPassword(encryptedB64, vaultKey);
+        return attempt === stored;
+    } catch {
+        return false;
+    }
 }
 
 /*  Generate cryptographically-secure random bytes

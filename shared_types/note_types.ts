@@ -9,7 +9,8 @@ export type EncryptedNote = {
     pinned: boolean,
     note_type: NoteType,
     updated_at: string,
-    created_at: string
+    created_at: string,
+    second_password: string | null
 };
 
 export type DecryptedNote = {
@@ -21,7 +22,8 @@ export type DecryptedNote = {
     pinned: boolean,
     note_type: NoteType,
     updated_at: string,
-    created_at: string
+    created_at: string,
+    second_password: string | null
 };
 
 export type DisplayNote = DecryptedNote & {

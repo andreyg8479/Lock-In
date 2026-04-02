@@ -4,14 +4,14 @@ import { useAuth } from "./AuthContext";
 import { sortNotes, type SortOption } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
 import { getAllNotesClient } from "./client_storage";
-import { decryptFilenames } from "./crypto/lockinCrypto";
+import { decryptFilenames, verifySecondPassword } from "./crypto/lockinCrypto";
 import type { DisplayNote, NoteType } from "../../shared_types/note_types";
 import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getKey, getShift } from './SettingsMem'
 
 /** Set to false when login works again — shows demo server + client rows without auth. */
-const FAKE_NOTE_LIST_PREVIEW = true
+const FAKE_NOTE_LIST_PREVIEW = false
 
 function fakeDemoNotes(): DisplayNote[] {
 	const now = Date.now()
@@ -27,6 +27,7 @@ function fakeDemoNotes(): DisplayNote[] {
 			note_type: "text",
 			updated_at: iso(-86_400_000),
 			created_at: iso(-1_209_600_000),
+			second_password: null,
 			client: false,
 		},
 		{
@@ -39,6 +40,7 @@ function fakeDemoNotes(): DisplayNote[] {
 			note_type: "text",
 			updated_at: iso(-3_600_000),
 			created_at: iso(-604_800_000),
+			second_password: null,
 			client: false,
 		},
 		{
@@ -51,6 +53,7 @@ function fakeDemoNotes(): DisplayNote[] {
 			note_type: "text",
 			updated_at: iso(-120_000),
 			created_at: iso(-2_592_000_000),
+			second_password: null,
 			client: true,
 		},
 		{
@@ -63,6 +66,7 @@ function fakeDemoNotes(): DisplayNote[] {
 			note_type: "audio",
 			updated_at: iso(-500),
 			created_at: iso(-86_400_000),
+			second_password: null,
 			client: true,
 		},
 	]
@@ -182,6 +186,7 @@ function NotePage() {
 						note_type: n.note_type || 'text',
 						updated_at: n.updated_at,
 						created_at: n.created_at,
+						second_password: n.second_password ?? null,
 						client: false
 					}));
 					allNotes = [...allNotes, ...serverNotes];
@@ -206,6 +211,7 @@ function NotePage() {
 				note_type: n.note_type || 'text',
 				updated_at: n.updated_at,
 				created_at: n.created_at,
+				second_password: n.second_password ?? null,
 				client: true
 			}));
 			allNotes = [...allNotes, ...clientNotes];
@@ -290,12 +296,20 @@ function NotePage() {
 				editButton.disabled = true;
 				editButton.title = "Preview only — login to open notes";
 			} else {
-				editButton.addEventListener("click", () => {
-					if (note.extraPassword != "") {
-						extraPassInput = prompt("Please enter this note's extra password");
-						if (extraPassInput != note.extraPassword) {
-							alert("Extra Password Incorrect");
+				editButton.addEventListener("click", async () => {
+					if (note.second_password) {
+						if (!vaultKey) {
+							alert("Encryption key not available. Please log in again.");
 							return;
+						}
+						let verified = false;
+						while (!verified) {
+							const attempt = prompt("This note is locked. Enter the second password:");
+							if (attempt === null) return; // user cancelled
+							verified = await verifySecondPassword(attempt, note.second_password, vaultKey);
+							if (!verified) {
+								alert("Incorrect password. Try again.");
+							}
 						}
 					}
 					navigate("/NoteEdit", { state: { noteId: note.id, noteName: note.note_title, client: note.client } });
