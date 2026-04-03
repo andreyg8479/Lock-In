@@ -42,6 +42,15 @@ function Home() {
 			<button type="button" onClick={() => navigate("/Login")}>
 				Log in
 			</button>
+			<button type="button" onClick={() => navigate("/NoteList")}>
+				Go To Note List
+			</button>
+			<button type="button" onClick={() => navigate("/NoteEdit")}>
+				Make New Note
+			</button>
+			<button type="button" onClick={() => navigate("/Settings")}>
+				Settings
+			</button>
 		</div>
 	);
 }
