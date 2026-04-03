@@ -19,6 +19,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import './Settings.css'
 
+export const THEME_SELECT_ID = "theme";
+
 const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
   navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
 
@@ -135,7 +137,7 @@ Preferred Text Size:
 			
 			<div className="settings-row">
 Theme:
-				<select id="theme" value={theme} onChange={(e) => setSetTheme(normalizeTheme(e.target.value))}>
+				<select id={THEME_SELECT_ID} value={theme} onChange={(e) => setSetTheme(normalizeTheme(e.target.value))}>
 				  <option value="light">Light</option>
 				  <option value="dark">Dark</option>
 				</select>
