@@ -12,12 +12,11 @@ import Settings from "./Settings";
 
 
 
-//Debug lets you go to your page
 function PagesList() {
 	return (
 		<div>
 			<div>
-				<h1>Debug Select Page Menu</h1>
+				<h1>Main Menu</h1>
 				<Link to="/Home">(Home)</Link>
 				<Link to="/NoteEdit"> (NoteEdit)   </Link>
 				<Link to="/NoteList"> (NoteList)   </Link>
@@ -36,6 +35,7 @@ function Home() {
 	const navigate = useNavigate();
 	return (
 		<div className="auth-landing">
+			<h1 className="auth-landing-title">Welcome to Lock-In!</h1>
 			<button type="button" onClick={() => navigate("/SignUp")}>
 				Sign up
 			</button>
