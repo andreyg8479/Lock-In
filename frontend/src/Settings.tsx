@@ -39,7 +39,7 @@ function Settings() {
 		const parts: string[] = [];
 		if (ctrl)  parts.push(isMac ? '⌃ Ctrl' : 'Ctrl');
 		if (shift) parts.push(isMac ? '⇧ Shift' : 'Shift');
-		if (alt)   parts.push(isMac ? '⌥ Option' : 'Alt');
+		if (alt)   parts.push(isMac ? '⌥ Alt' : 'Alt');
 		parts.push(key || '?');
 		return parts;
 	}, [ctrl, shift, alt, key]);
