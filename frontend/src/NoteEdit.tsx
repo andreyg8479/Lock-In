@@ -82,6 +82,9 @@ function NoteEdit() {
 						}
 					} catch (e) {
 						console.error("Client load error:", e);
+						alert(
+							`Failed to load this note from this device.\n\n${e instanceof Error ? e.message : String(e)}`,
+						);
 					}
 				} else {
 					// Server-side fetch
@@ -321,6 +324,9 @@ function NoteEdit() {
 				}
 			} catch (error) {
 				console.error("Delete failed:", error);
+				alert(
+					`Failed to delete the note.\n\n${error instanceof Error ? error.message : String(error)}`,
+				);
 			}
 			setConfirming(false);
 		}

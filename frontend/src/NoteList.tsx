@@ -12,6 +12,36 @@ import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
 type DateFilterField = 'created' | 'updated'
 
+function localDateYYYYMMDD(): string {
+	const d = new Date()
+	const y = d.getFullYear()
+	const m = String(d.getMonth() + 1).padStart(2, '0')
+	const day = String(d.getDate()).padStart(2, '0')
+	return `${y}-${m}-${day}`
+}
+
+function errorMessage(err: unknown): string {
+	return err instanceof Error ? err.message : String(err)
+}
+
+function isCompleteDateYYYYMMDD(s: string): boolean {
+	return /^\d{4}-\d{2}-\d{2}$/.test(s)
+}
+
+function dateRangeValidationMessage(from: string, to: string): string | null {
+	const today = localDateYYYYMMDD()
+	if (from && isCompleteDateYYYYMMDD(from) && from > today) {
+		return 'Date range cannot include a future date.'
+	}
+	if (to && isCompleteDateYYYYMMDD(to) && to > today) {
+		return 'Date range cannot include a future date.'
+	}
+	if (isCompleteDateYYYYMMDD(from) && isCompleteDateYYYYMMDD(to) && from > to) {
+		return 'The "from" date must be on or before the "to" date.'
+	}
+	return null
+}
+
 function notePassesDateRange(
 	note: DisplayNote,
 	field: DateFilterField,
@@ -104,6 +134,10 @@ function NotePage() {
 	const [dateTo, setDateTo] = useState<string>('');
 	const [dateFilterOpen, setDateFilterOpen] = useState(false);
 	const dateFilterWrapRef = useRef<HTMLDivElement>(null);
+	const todayMax = localDateYYYYMMDD();
+	/** Shown in-page below the header when loading the note list fails (not the browser alert dialog). */
+	const [listLoadError, setListLoadError] = useState<string | null>(null);
+	const [dateFilterError, setDateFilterError] = useState<string | null>(null);
 	
 	const [isListHidden, setIsListHidden] = useState<boolean>(false);
 	const notesCacheRef = useRef<DisplayNote[]>([]);
@@ -153,7 +187,11 @@ function NotePage() {
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
 	}, [dateFilterOpen]);
-  
+
+	useEffect(() => {
+		if (!dateFilterOpen) setDateFilterError(null);
+	}, [dateFilterOpen]);
+
 	useEffect(() => {
 		loadList();
 	}, [])
@@ -168,7 +206,7 @@ function NotePage() {
 
 		const startInterval = () => {
 			interval = setInterval(() => {
-				loadList();
+				loadList({ silent: true });
 			}, 10000);
 		};
 
@@ -207,11 +245,14 @@ function NotePage() {
 	}, [sortBy]);
 
 
-	async function loadList() {
+	async function loadList(options?: { silent?: boolean }) {
+		const silent = options?.silent === true
+		const loadErrors: string[] = []
 		if (FAKE_NOTE_LIST_PREVIEW) {
 			const notes = fakeDemoNotes()
 			notesCacheRef.current = notes
 			displayNotes(notes)
+			if (!silent) setListLoadError(null)
 			return
 		}
 
@@ -220,6 +261,7 @@ function NotePage() {
 		if (!userId || !vaultKey) {
 			notesCacheRef.current = []
 			displayNotes([]);
+			if (!silent) setListLoadError(null)
 			return;
 		}
 
@@ -246,6 +288,7 @@ function NotePage() {
 				}
 			} catch (err) {
 				console.error("Failed to load server notes:", err);
+				loadErrors.push(`Could not load notes from the server.\n${errorMessage(err)}`);
 			}
 		}
 
@@ -271,6 +314,7 @@ function NotePage() {
 
 		} catch (e) {
 			console.error("Failed to load client notes:", e);
+			loadErrors.push(`Could not load notes stored on this device.\n${errorMessage(e)}`);
 		}
 
 		// 3. Decrypt names if key is available
@@ -285,11 +329,18 @@ function NotePage() {
 				}));
 			} catch (e) {
 				console.error("Decryption error:", e);
+				loadErrors.push(
+					`Could not decrypt note names.\n${errorMessage(e)}\nIf you changed your password, try logging in again.`,
+				);
 			}
 		}
 
 		notesCacheRef.current = allNotes
 		displayNotes(allNotes);
+
+		if (!silent) {
+			setListLoadError(loadErrors.length > 0 ? loadErrors.join("\n\n") : null);
+		}
 	}
 
 	function displayNotes(notes: DisplayNote[], term = searchTerm, sort = sortBy) {
@@ -298,9 +349,10 @@ function NotePage() {
 			.filter(note =>
 				note.note_title.toLowerCase().includes(term.toLowerCase())
 			)
-			.filter(note =>
-				notePassesDateRange(note, dateFilterField, dateFrom, dateTo)
-			)
+			.filter((note) => {
+				if (dateRangeValidationMessage(dateFrom, dateTo) !== null) return true
+				return notePassesDateRange(note, dateFilterField, dateFrom, dateTo)
+			})
 	
 		const sorted = sortNotes(filtered, sort);
 		
@@ -398,10 +450,26 @@ function NotePage() {
 		<div className="top-bar">
 			<button className="home-button" onClick={homeButton}>Home</button>
 			<h1>Your Notes</h1>
-			<button className="refresh-button" onClick={loadList} >Refresh</button>
+			<button className="refresh-button" onClick={() => loadList()} >Refresh</button>
 			<button className="add-button" onClick={() => navigate("/NoteEdit")}>+ New</button>
 		</div>
-	
+
+		{listLoadError ? (
+			<div
+				className="notes-page-banner notes-page-banner-error"
+				role="alert"
+				aria-live="polite"
+			>
+				<p className="notes-page-banner-text">{listLoadError}</p>
+				<button
+					type="button"
+					className="notes-page-banner-dismiss"
+					onClick={() => setListLoadError(null)}
+				>
+					Dismiss
+				</button>
+			</div>
+		) : null}
 	
 		<div className="controls">
 			<input 
@@ -474,8 +542,14 @@ function NotePage() {
 									<input
 										type="date"
 										value={dateFrom}
-										onChange={(e) => setDateFrom(e.target.value)}
+										max={todayMax}
+										onChange={(e) => {
+											const next = e.target.value
+											setDateFrom(next)
+											setDateFilterError(dateRangeValidationMessage(next, dateTo))
+										}}
 										aria-label="Date from"
+										aria-invalid={dateFilterError ? true : undefined}
 									/>
 								</label>
 								<span className="date-filter-to" aria-hidden="true">–</span>
@@ -484,11 +558,22 @@ function NotePage() {
 									<input
 										type="date"
 										value={dateTo}
-										onChange={(e) => setDateTo(e.target.value)}
+										max={todayMax}
+										onChange={(e) => {
+											const next = e.target.value
+											setDateTo(next)
+											setDateFilterError(dateRangeValidationMessage(dateFrom, next))
+										}}
 										aria-label="Date to"
+										aria-invalid={dateFilterError ? true : undefined}
 									/>
 								</label>
 							</div>
+							{dateFilterError ? (
+								<p className="date-filter-inline-error" role="alert">
+									{dateFilterError}
+								</p>
+							) : null}
 						</div>
 					</div>
 				) : null}
