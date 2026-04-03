@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
@@ -17,37 +17,22 @@ const Login: React.FC = () => {
 	const navigate = useNavigate();
 	const { setUserId, setVaultKey, setUsername } = useAuth();
 
+	// Store successful password verification results for use after 2FA
+	const loginResultRef = useRef<{ vaultKey: CryptoKey } | null>(null);
+	const loginResponseRef = useRef<any>(null);
+
 	const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		if (!email || !password) return;
 
 		setLoading(true);
 		try {
-			await send2fa({ email });
-			setStep("2fa");
-		} catch (error: any) {
-			console.error("Failed to send 2FA code:", error);
-			alert(error.message || "Failed to send verification code");
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleVerifyAndLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		if (!twoFaCode) return;
-
-		setLoading(true);
-		try {
-			// Step 1: Verify the 2FA code server-side
-			await verify2fa({ email, code: twoFaCode });
-
-			// Step 2: Fetch crypto metadata from server
+			// Step 1: Fetch crypto metadata from server
 			const response = await requestLogin({ email });
 
 			// Validate that all necessary crypto artifacts are present
 			const requiredFields = [
-				"kdf", "iterations", "salt", "cipher", "iv", 
+				"kdf", "iterations", "salt", "cipher", "iv",
 				"aes_key_length", "gcm_iv_length", "wrapped_master_key", "version"
 			];
 			const missing = requiredFields.filter(field => !response[field]);
@@ -67,7 +52,7 @@ const Login: React.FC = () => {
 				v: response.version
 			};
 
-			// Step 3: Attempt to unwrap the master key using the metadata
+			// Step 2: Attempt to unwrap the master key to verify password FIRST
 			const result = await handleLogin({
 				email: response.email,
 				username: response.username,
@@ -75,14 +60,46 @@ const Login: React.FC = () => {
 				artifacts: artifacts
 			});
 
-			if (result.ok) {
-				setUserId(response.id);
-				setVaultKey(result.payload.vaultKey);
-				setUsername(response.username);
-				navigate("/main");
-			} else {
-				alert(result.payload.errorMessage);
+			if (!result.ok) {
+				throw new Error(result.payload.errorMessage);
 			}
+
+			// Password is correct — store results for use after 2FA
+			loginResultRef.current = result.payload;
+			loginResponseRef.current = response;
+
+			// Step 3: Only now send the 2FA code
+			await send2fa({ email });
+			setStep("2fa");
+		} catch (error: any) {
+			console.error("Login failed:", error);
+			alert(error.message || "Login failed");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleVerifyAndLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (!twoFaCode) return;
+
+		setLoading(true);
+		try {
+			// Verify the 2FA code server-side
+			await verify2fa({ email, code: twoFaCode });
+
+			// Use the already-verified login results from the password step
+			const response = loginResponseRef.current;
+			const loginResult = loginResultRef.current;
+
+			if (!response || !loginResult) {
+				throw new Error("Session expired. Please try logging in again.");
+			}
+
+			setUserId(response.id);
+			setVaultKey(loginResult.vaultKey);
+			setUsername(response.username);
+			navigate("/main");
 		} catch (error: any) {
 			console.error("Login failed:", error);
 			alert(error.message || "Login failed");
@@ -124,7 +141,7 @@ const Login: React.FC = () => {
 					</label>
 
 					<button type="submit" className="auth-button" disabled={loading}>
-						{loading ? "Sending Code..." : "Login"}
+						{loading ? "Verifying..." : "Login"}
 					</button>
 				</form>
 				)}
@@ -152,7 +169,7 @@ const Login: React.FC = () => {
 					<button
 						type="button"
 						className="auth-button"
-						onClick={() => { setStep("credentials"); setTwoFaCode(""); }}
+						onClick={() => { setStep("credentials"); setTwoFaCode(""); loginResultRef.current = null; loginResponseRef.current = null; }}
 					>
 						Back
 					</button>
