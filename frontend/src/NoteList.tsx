@@ -9,26 +9,7 @@ import type { DisplayNote, NoteType } from "../../shared_types/note_types";
 import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
-
-type DateFilterField = 'created' | 'updated'
-
-function notePassesDateRange(
-	note: DisplayNote,
-	field: DateFilterField,
-	dateFrom: string,
-	dateTo: string
-): boolean {
-	if (!dateFrom && !dateTo) return true
-	const t = new Date(field === 'created' ? note.created_at : note.updated_at).getTime()
-	if (Number.isNaN(t)) return false
-	const fromMs = dateFrom
-		? new Date(`${dateFrom}T00:00:00`).getTime()
-		: null
-	const toMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null
-	if (fromMs !== null && t < fromMs) return false
-	if (toMs !== null && t > toMs) return false
-	return true
-}
+import { filterNotesForList, type DateFilterField } from "./noteListFilter"
 
 /** Set to false when login works again — shows demo server + client rows without auth. */
 const FAKE_NOTE_LIST_PREVIEW = false
@@ -294,13 +275,7 @@ function NotePage() {
 
 	function displayNotes(notes: DisplayNote[], term = searchTerm, sort = sortBy) {
 	
-		const filtered = notes
-			.filter(note =>
-				note.note_title.toLowerCase().includes(term.toLowerCase())
-			)
-			.filter(note =>
-				notePassesDateRange(note, dateFilterField, dateFrom, dateTo)
-			)
+		const filtered = filterNotesForList(notes, term, dateFilterField, dateFrom, dateTo);
 	
 		const sorted = sortNotes(filtered, sort);
 		
