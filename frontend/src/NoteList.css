@@ -27,9 +27,27 @@ html, body {
 
 .controls {
 	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
 	padding: 30px 20px;
 	gap: 10px;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.date-filter-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.date-filter-label-text {
+	font-size: 0.9rem;
+	white-space: nowrap;
+}
+
+.date-filter-to {
+	opacity: 0.75;
 }
 
 .controls input {
@@ -39,6 +57,20 @@ html, body {
 	border: 1px solid var(--color-input-border);
 	background-color: var(--color-input-bg);
 	color: var(--color-text);
+}
+
+.controls select,
+.date-filter-label input[type="date"] {
+	padding: 8px;
+	border-radius: 5px;
+	border: 1px solid var(--color-input-border);
+	background-color: var(--color-input-bg);
+	color: var(--color-text);
+}
+
+.date-filter-label input[type="date"] {
+	flex: 0 1 auto;
+	min-width: 10rem;
 }
 
 .list-container {
