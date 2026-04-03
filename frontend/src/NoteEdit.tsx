@@ -10,7 +10,7 @@ import type { EncryptedNote, DecryptedNote, NoteType } from "../../shared_types/
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 import './NoteEdit.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
-import { getAlt, getKey, getShift } from './SettingsMem'
+import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
 function NoteEdit() {
 	const navigate = useNavigate();
@@ -44,7 +44,7 @@ function NoteEdit() {
 		key: getKey(),
 		shift: getShift(),
 		alt: getAlt(),
-		ctrl: true,
+		ctrl: getCtrl(),
 	} as const;
 
 	useKeyComboDetector(

@@ -8,7 +8,7 @@ import { decryptFilenames, verifySecondPassword } from "./crypto/lockinCrypto";
 import type { DisplayNote, NoteType } from "../../shared_types/note_types";
 import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
-import { getAlt, getKey, getShift } from './SettingsMem'
+import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
 /** Set to false when login works again — shows demo server + client rows without auth. */
 const FAKE_NOTE_LIST_PREVIEW = false
@@ -86,7 +86,7 @@ function NotePage() {
 		key: getKey(),
 		shift: getShift(),
 		alt: getAlt(),
-		ctrl: true,
+		ctrl: getCtrl(),
 	} as const;
 	
 	const searchTermRef = useRef(searchTerm);

@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
  getTheme, 
  setTheme,
@@ -12,10 +12,15 @@ import {
  getAlt,
  setAlt,
  getShift,
- setShift
+ setShift,
+ getCtrl,
+ setCtrl
  } from "./SettingsMem";
 import { useNavigate } from "react-router-dom";
 import './Settings.css'
+
+const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
+  navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
 
 function Settings() {
 
@@ -26,8 +31,18 @@ function Settings() {
 	const [key, setSetKey] = useState(getKey());
 	const [shift, setSetShift] = useState(getShift());
 	const [alt, setSetAlt] = useState(getAlt());
+	const [ctrl, setSetCtrl] = useState(getCtrl());
 	
 	const [theme, setSetTheme] = useState(getTheme());
+
+	const comboLabel = useMemo(() => {
+		const parts: string[] = [];
+		if (ctrl)  parts.push(isMac ? '⌃ Ctrl' : 'Ctrl');
+		if (shift) parts.push(isMac ? '⇧ Shift' : 'Shift');
+		if (alt)   parts.push(isMac ? '⌥ Option' : 'Alt');
+		parts.push(key || '?');
+		return parts;
+	}, [ctrl, shift, alt, key]);
 	
 	function homeButton() {
 		navigate("/main");
@@ -63,6 +78,7 @@ function Settings() {
 		setKey(key);
 		setAlt(alt);
 		setShift(shift);
+		setCtrl(ctrl);
 		
 		alert("Settings Updated Successfully");
 	
@@ -87,11 +103,34 @@ Preferred Text Size:
 				<input type="number" id="pref-text-size" value={prefSize} onChange={(e) => setSetPrefSize(Number(e.target.value))}/>
 			</div>
 			
-			<div className="settings-row">
-Hide Screen Keybind: 							&emsp;&emsp;&emsp;
-				<div id="thing"> Require Shift: <input type="checkbox" id="shift" checked={shift} onChange={(e) => setSetShift(e.target.checked)}/> </div>
-				<div id="thing"> Require Alt: <input type="checkbox" id="alt" checked={alt} onChange={(e) => setSetAlt(e.target.checked)}/> </div>
-				<div id="thing"> Key: <input type="text" id="charInput" maxLength={1} size={1} value ={key} onChange={(e) => setSetKey(e.target.value.toUpperCase())} /> </div>
+			<div className="settings-row keybind-row">
+				<span className="settings-label">Hide Screen Keybind:</span>
+				<div className="keybind-options">
+					<label className="keybind-option">
+						<input type="checkbox" checked={ctrl} onChange={(e) => setSetCtrl(e.target.checked)}/>
+						<span>{isMac ? '⌃ Ctrl' : 'Ctrl'}</span>
+					</label>
+					<label className="keybind-option">
+						<input type="checkbox" checked={shift} onChange={(e) => setSetShift(e.target.checked)}/>
+						<span>{isMac ? '⇧ Shift' : 'Shift'}</span>
+					</label>
+					<label className="keybind-option">
+						<input type="checkbox" checked={alt} onChange={(e) => setSetAlt(e.target.checked)}/>
+						<span>{isMac ? '⌥ Option' : 'Alt'}</span>
+					</label>
+					<label className="keybind-option">
+						<span>Key:</span>
+						<input type="text" className="key-char-input" maxLength={1} size={1} value={key} onChange={(e) => setSetKey(e.target.value.toUpperCase())} />
+					</label>
+				</div>
+
+				<div className="keybind-preview" aria-label="Current keybind preview">
+					{comboLabel.map((part, i) => (
+						<span key={i} className="keycap">
+							{part}
+						</span>
+					))}
+				</div>
 			</div>
 			
 			<div className="settings-row">

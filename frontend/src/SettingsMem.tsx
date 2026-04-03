@@ -72,4 +72,17 @@ export function setAlt(alt: boolean) {
 	localStorage.setItem('alt', alt.toString());
 }
 
+export function getCtrl() {
+	const ctrl = localStorage.getItem('ctrl');
+	if (ctrl) {
+		return ctrl.toLowerCase() === 'true';
+	} else {
+		return false;
+	}
+}
+
+export function setCtrl(ctrl: boolean) {
+	localStorage.setItem('ctrl', ctrl.toString());
+}
+
 //

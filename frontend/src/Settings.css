@@ -64,3 +64,104 @@ html, body {
 	padding: 6px 12px;
 	cursor: pointer;
 }
+
+/* ── Keybind row ── */
+
+.keybind-row {
+	flex-direction: column;
+	align-items: flex-start !important;
+	gap: 16px !important;
+}
+
+.keybind-row .settings-label {
+	font-weight: 600;
+	font-size: 1em;
+}
+
+.keybind-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: center;
+}
+
+.keybind-option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.keybind-option input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--color-accent, #4f8ef7);
+	cursor: pointer;
+	flex: none;
+}
+
+.key-char-input {
+	width: 36px !important;
+	height: 36px;
+	text-align: center;
+	font-size: 1.1em;
+	font-weight: 600;
+	text-transform: uppercase;
+	border-radius: 6px;
+	border: 1px solid var(--color-input-border);
+	background-color: var(--color-input-bg);
+	color: var(--color-text);
+	flex: none !important;
+}
+
+/* ── Keycap preview ── */
+
+.keybind-preview {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.keybind-preview .keycap + .keycap::before {
+	content: '+';
+	margin-right: 6px;
+	font-weight: 500;
+	opacity: 0.5;
+}
+
+.keycap {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 38px;
+	padding: 6px 12px;
+	font-family: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+	font-size: 0.85em;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--color-text, #333);
+	background: linear-gradient(180deg, var(--keycap-top, #f8f8f8) 0%, var(--keycap-bottom, #e0e0e0) 100%);
+	border: 1px solid var(--keycap-border, #b0b0b0);
+	border-bottom-width: 3px;
+	border-radius: 6px;
+	box-shadow:
+		0 1px 0 rgba(0,0,0,0.15),
+		inset 0 1px 0 rgba(255,255,255,0.5);
+	text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+	user-select: none;
+	white-space: nowrap;
+}
+
+/* Dark theme keycap overrides */
+[data-theme="dark"] .keycap {
+	--keycap-top: #3a3a3c;
+	--keycap-bottom: #2c2c2e;
+	--keycap-border: #555;
+	color: #e5e5e7;
+	text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+	box-shadow:
+		0 1px 0 rgba(0,0,0,0.4),
+		inset 0 1px 0 rgba(255,255,255,0.08);
+}
