@@ -57,6 +57,7 @@ function Settings() {
 		setTheme(theme);
 		applyTheme(theme);
 		
+		document.documentElement.style.fontSize = `${prefSize}px`;
 		setPrefSize(prefSize);
 		
 		setKey(key);
