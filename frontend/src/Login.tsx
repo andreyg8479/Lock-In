@@ -79,7 +79,7 @@ const Login: React.FC = () => {
 				setUserId(response.id);
 				setVaultKey(result.payload.vaultKey);
 				setUsername(response.username);
-				navigate("/");
+				navigate("/main");
 			} else {
 				alert(result.payload.errorMessage);
 			}

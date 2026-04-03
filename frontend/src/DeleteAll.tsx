@@ -11,7 +11,7 @@ function DeleteAll() {
 	const { username } = useAuth();
 	
 	const handleBack = () => {
-		navigate("/");
+		navigate("/main");
 	  };
 
 	  const handleDelete = async () => {

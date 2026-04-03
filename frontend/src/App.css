@@ -5,6 +5,13 @@
   text-align: center;
 }
 
+.auth-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
