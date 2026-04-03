@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import './Settings.css'
 
 export const THEME_SELECT_ID = "theme";
+export const HIDEBIND_KEY_INPUT_ID = "hide-keybind-key";
 
 const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
   navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
@@ -122,7 +123,7 @@ Preferred Text Size:
 					</label>
 					<label className="keybind-option">
 						<span>Key:</span>
-						<input type="text" className="key-char-input" maxLength={1} size={1} value={key} onChange={(e) => setSetKey(e.target.value.toUpperCase())} />
+						<input type="text" id={HIDEBIND_KEY_INPUT_ID} className="key-char-input" maxLength={1} size={1} value={key} onChange={(e) => setSetKey(e.target.value.toUpperCase())} />
 					</label>
 				</div>
 

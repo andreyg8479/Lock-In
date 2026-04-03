@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import Settings, { THEME_SELECT_ID } from "./Settings";
+import Settings, { THEME_SELECT_ID, HIDEBIND_KEY_INPUT_ID } from "./Settings";
 
 function renderSettings() {
 	return render(
@@ -30,5 +30,22 @@ describe("Settings theme", () => {
 
 		fireEvent.change(select, { target: { value: "light" } });
 		expect(select.value).toBe("light");
+	});
+});
+
+describe("Settings hide keybind", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	it("updates the key character when the key input is changed", () => {
+		renderSettings();
+		const keyInput = document.getElementById(
+			HIDEBIND_KEY_INPUT_ID,
+		) as HTMLInputElement;
+		expect(keyInput.value).toBe("M");
+
+		fireEvent.change(keyInput, { target: { value: "z" } });
+		expect(keyInput.value).toBe("Z");
 	});
 });

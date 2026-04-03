@@ -9,6 +9,8 @@ import type { EncryptedNote, DecryptedNote, NoteType } from "../../shared_types/
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 import './NoteEdit.css'
+
+export const NOTE_TYPE_SELECT_ID = "note-edit-note-type";
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
@@ -380,6 +382,7 @@ function NoteEdit() {
 			Attach File
 			</button>
 			<select
+				id={NOTE_TYPE_SELECT_ID}
 				value={noteType}
 				onChange={(e) => {
 					const newType = e.target.value as NoteType;
