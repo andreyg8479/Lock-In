@@ -38,7 +38,6 @@ function NoteEdit() {
 	const [secondPasswordB64, setSecondPasswordB64] = useState<string | null>(null);
 	
 	const [confirming, setConfirming] = useState(false);
-	const [attachFileKind, setAttachFileKind] = useState<'audio' | 'image'>('audio');
 	const hideCombo = {
 		key: getKey(),
 		shift: getShift(),
@@ -237,9 +236,9 @@ function NoteEdit() {
 	}
 	
 	const attachFile = () => {
-		if (attachFileKind === 'audio') {
+		if (noteType === 'audio') {
 			audioFileInputRef.current?.click();
-		} else if (attachFileKind === 'image') {
+		} else if (noteType === 'image') {
 			imageFileInputRef.current?.click();
 		}
 	}
@@ -373,12 +372,20 @@ function NoteEdit() {
 			</button>
 			
 			<button onClick={attachFile}>
-			Make File Note
+			Attach File
 			</button>
 			<select
-				value={attachFileKind}
-				onChange={(e) => setAttachFileKind(e.target.value as 'audio' | 'image')}
+				value={noteType}
+				onChange={(e) => {
+					const newType = e.target.value as NoteType;
+					if (noteType !== 'text' && newType === 'text') {
+						if (!confirm("Switching to text will clear the current media content. Continue?")) return;
+						setContent("");
+					}
+					setNoteType(newType);
+				}}
 			>
+				<option value="text">Text</option>
 				<option value="audio">Audio</option>
 				<option value="image">Image</option>
 			</select>

@@ -31,7 +31,7 @@ app.use(cors({
 	methods: ["GET", "POST", "PUT", "DELETE"],
 	credentials: true
 }));
-app.use(express.json())
+app.use(express.json({ limit: '15mb' }))
 
 app.post("/api/auth/signup", handleSignup);
 app.post("/api/auth/login", handleLogin);
@@ -54,7 +54,7 @@ console.log("Serving frontend from:", frontendPath);
 app.use(express.static(frontendPath));
 
 // API routes (must be before catch-all so they are reachable)
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
 
 function validateSignupBody(body: any) {
   const { username, email, saltB64, iterations, wrapIvB64, wrappedMasterKeyB64 } = body ?? {};
