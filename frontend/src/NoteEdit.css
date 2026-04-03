@@ -79,3 +79,24 @@
 	max-height: 100%;
 	object-fit: contain;
 }
+
+.drop-zone {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.drop-zone-active {
+	outline: 2px dashed var(--color-text, #888);
+	outline-offset: -4px;
+	border-radius: 8px;
+	background-color: rgba(128, 128, 128, 0.08);
+}
+
+.drop-placeholder {
+	color: var(--color-text, #888);
+	opacity: 0.5;
+	font-size: 16px;
+	user-select: none;
+}

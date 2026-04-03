@@ -24,6 +24,7 @@ function NoteEdit() {
 	const ogNoteClient = locationState.client || false; //true = client, false = server
 	
 	const [noteId, setNoteId] = useState<string | null>(ogNoteId || null);
+	const [existsOnServer, setExistsOnServer] = useState(ogNoteId && !ogNoteClient ? true : false);
 	const [pinned, setPinned] = useState(false);
 	
 	const [title, setTitle] = useState(ogNoteName ?? "Untitled Document");
@@ -38,6 +39,7 @@ function NoteEdit() {
 	const [secondPasswordB64, setSecondPasswordB64] = useState<string | null>(null);
 	
 	const [confirming, setConfirming] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
 	const hideCombo = {
 		key: getKey(),
 		shift: getShift(),
@@ -109,6 +111,7 @@ function NoteEdit() {
 							}
 
 							setNoteId(noteData.id);
+							setExistsOnServer(true);
 							if (noteData.second_password) {
 								setSecondPasswordB64(noteData.second_password);
 								setExtraPassword(true);
@@ -159,10 +162,11 @@ function NoteEdit() {
 
 			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
 
-			if (noteId == null) { 
+			if (!existsOnServer) { 
 				console.log("Creating new note...");
 				const result = await uploadNote(encryptedNote);
 				setNoteId(String(result.id));
+				setExistsOnServer(true);
 				alert("Note Created!");
 				navigate("/NoteList");
 			} else {
@@ -234,7 +238,36 @@ function NoteEdit() {
 
 		return btoa(binary);
 	}
-	
+
+	const ACCEPTED_MIME_TYPES: Record<string, NoteType> = {
+		'audio/mpeg': 'audio',
+		'image/png': 'image',
+		'image/jpeg': 'image',
+	};
+
+	const processFile = async (file: File) => {
+		const detectedType = ACCEPTED_MIME_TYPES[file.type];
+		if (!detectedType) {
+			alert("Unsupported file type. Accepted: MP3, PNG, JPEG.");
+			return;
+		}
+		if (file.size > MAX_FILE_SIZE) {
+			alert("File exceeds 10 MB limit.");
+			return;
+		}
+		if (content) {
+			if (!confirm("This will replace the current note content. Continue?")) return;
+		}
+		try {
+			const buffer = await file.arrayBuffer();
+			setContent(arrayBufferToBase64(buffer));
+			setNoteType(detectedType);
+		} catch (error) {
+			console.error("Failed to process file:", error);
+			alert("Failed to process the selected file.");
+		}
+	};
+
 	const attachFile = () => {
 		if (noteType === 'audio') {
 			audioFileInputRef.current?.click();
@@ -300,24 +333,10 @@ function NoteEdit() {
 			type="file"
 			accept=".mp3,audio/mpeg"
 			style={{ display: 'none' }}
-			onChange={async (e) => {
+			onChange={(e) => {
 				const file = e.target.files?.[0];
-				if (!file) { e.target.value = ''; return; }
-				if (file.size > MAX_FILE_SIZE) {
-					alert("File exceeds 10 MB limit.");
-					e.target.value = '';
-					return;
-				}
-				try {
-					const buffer = await file.arrayBuffer();
-					setContent(arrayBufferToBase64(buffer));
-					setNoteType('audio');
-				} catch (error) {
-					console.error("Failed to process audio file:", error);
-					alert("Failed to process selected audio file.");
-				} finally {
-					e.target.value = '';
-				}
+				if (file) processFile(file);
+				e.target.value = '';
 			}}
 		/>
 		<input
@@ -325,24 +344,10 @@ function NoteEdit() {
 			type="file"
 			accept=".png,.jpg,.jpeg,image/png,image/jpeg"
 			style={{ display: 'none' }}
-			onChange={async (e) => {
+			onChange={(e) => {
 				const file = e.target.files?.[0];
-				if (!file) { e.target.value = ''; return; }
-				if (file.size > MAX_FILE_SIZE) {
-					alert("File exceeds 10 MB limit.");
-					e.target.value = '';
-					return;
-				}
-				try {
-					const buffer = await file.arrayBuffer();
-					setContent(arrayBufferToBase64(buffer));
-					setNoteType('image');
-				} catch (error) {
-					console.error("Failed to process image file:", error);
-					alert("Failed to process selected image file.");
-				} finally {
-					e.target.value = '';
-				}
+				if (file) processFile(file);
+				e.target.value = '';
 			}}
 		/>
 	
@@ -410,26 +415,45 @@ function NoteEdit() {
 			
 		</div>
 		
-		{noteType === 'text' && (
-			<textarea
-				className={`note-text ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
-				placeholder="Write note here"
-				value={content}
-				onChange={(e) => setContent(e.target.value)}
-			/>
-		)}
+		<div
+			className={`drop-zone ${isDragging ? "drop-zone-active" : ""}`}
+			onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+			onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+			onDragLeave={() => setIsDragging(false)}
+			onDrop={(e) => {
+				e.preventDefault();
+				setIsDragging(false);
+				const file = e.dataTransfer.files?.[0];
+				if (file) processFile(file);
+			}}
+		>
+			{noteType === 'text' && (
+				<textarea
+					className={`note-text ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
+					placeholder="Write note here"
+					value={content}
+					onChange={(e) => setContent(e.target.value)}
+				/>
+			)}
 
-		{noteType === 'audio' && content && (
-			<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
-				<audio controls src={`data:audio/mpeg;base64,${content}`} />
-			</div>
-		)}
+			{noteType === 'audio' && content && (
+				<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+					<audio controls src={`data:audio/mpeg;base64,${content}`} />
+				</div>
+			)}
 
-		{noteType === 'image' && content && (
-			<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
-				<img src={`data:image/png;base64,${content}`} alt={title} className="note-image" />
-			</div>
-		)}
+			{noteType === 'image' && content && (
+				<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+					<img src={`data:image/png;base64,${content}`} alt={title} className="note-image" />
+				</div>
+			)}
+
+			{noteType !== 'text' && !content && (
+				<div className={`note-media drop-placeholder ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+					Drag &amp; drop a file here, or click Attach File
+				</div>
+			)}
+		</div>
 	</div>
   )
 }
