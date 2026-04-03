@@ -102,6 +102,8 @@ function NotePage() {
 	const [dateFilterField, setDateFilterField] = useState<DateFilterField>('updated');
 	const [dateFrom, setDateFrom] = useState<string>('');
 	const [dateTo, setDateTo] = useState<string>('');
+	const [dateFilterOpen, setDateFilterOpen] = useState(false);
+	const dateFilterWrapRef = useRef<HTMLDivElement>(null);
 	
 	const [isListHidden, setIsListHidden] = useState<boolean>(false);
 	const notesCacheRef = useRef<DisplayNote[]>([]);
@@ -131,6 +133,26 @@ function NotePage() {
 	useKeyComboDetector(hideCombo, () => {
 		hideButtonRef.current?.click();
 	}, { preventDefault: true });
+
+	useEffect(() => {
+		if (!dateFilterOpen) return;
+		const onDocMouseDown = (e: MouseEvent) => {
+			const el = dateFilterWrapRef.current;
+			if (!el || el.contains(e.target as Node)) return;
+			setDateFilterOpen(false);
+		};
+		document.addEventListener("mousedown", onDocMouseDown);
+		return () => document.removeEventListener("mousedown", onDocMouseDown);
+	}, [dateFilterOpen]);
+
+	useEffect(() => {
+		if (!dateFilterOpen) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setDateFilterOpen(false);
+		};
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [dateFilterOpen]);
   
 	useEffect(() => {
 		loadList();
@@ -415,30 +437,62 @@ function NotePage() {
 				<option value="audio">Audio Only</option>
 				<option value="image">Image Only</option>
 			</select>
-			<label className="date-filter-label">
-				<span className="date-filter-label-text">Date range</span>
-				<select
-					value={dateFilterField}
-					onChange={(e) => setDateFilterField(e.target.value as DateFilterField)}
-					aria-label="Filter dates by"
+			<div className="date-filter-wrap" ref={dateFilterWrapRef}>
+				<button
+					type="button"
+					className={`date-filter-trigger${dateFrom || dateTo ? " date-filter-trigger-active" : ""}`}
+					onClick={() => setDateFilterOpen((o) => !o)}
+					aria-expanded={dateFilterOpen}
+					aria-haspopup="dialog"
 				>
-					<option value="updated">Updated</option>
-					<option value="created">Created</option>
-				</select>
-				<input
-					type="date"
-					value={dateFrom}
-					onChange={(e) => setDateFrom(e.target.value)}
-					aria-label="Date from"
-				/>
-				<span className="date-filter-to" aria-hidden="true">–</span>
-				<input
-					type="date"
-					value={dateTo}
-					onChange={(e) => setDateTo(e.target.value)}
-					aria-label="Date to"
-				/>
-			</label>
+					Date range
+					{(dateFrom || dateTo) ? (
+						<span className="date-filter-active-indicator" aria-hidden="true" />
+					) : null}
+				</button>
+				{dateFilterOpen ? (
+					<div
+						className="date-filter-popover"
+						role="dialog"
+						aria-label="Filter notes by date"
+					>
+						<div className="date-filter-popover-inner">
+							<label className="date-filter-field-label">
+								<span className="date-filter-label-text">Filter by</span>
+								<select
+									value={dateFilterField}
+									onChange={(e) => setDateFilterField(e.target.value as DateFilterField)}
+									aria-label="Filter dates by"
+								>
+									<option value="updated">Updated</option>
+									<option value="created">Created</option>
+								</select>
+							</label>
+							<div className="date-filter-dates-row">
+								<label className="date-filter-date-label">
+									<span className="date-filter-sublabel">From</span>
+									<input
+										type="date"
+										value={dateFrom}
+										onChange={(e) => setDateFrom(e.target.value)}
+										aria-label="Date from"
+									/>
+								</label>
+								<span className="date-filter-to" aria-hidden="true">–</span>
+								<label className="date-filter-date-label">
+									<span className="date-filter-sublabel">To</span>
+									<input
+										type="date"
+										value={dateTo}
+										onChange={(e) => setDateTo(e.target.value)}
+										aria-label="Date to"
+									/>
+								</label>
+							</div>
+						</div>
+					</div>
+				) : null}
+			</div>
 		</div>
 		<div className="list-container">
 			<div
