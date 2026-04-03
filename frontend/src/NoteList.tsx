@@ -341,6 +341,7 @@ function NotePage() {
 			<button className="home-button" onClick={homeButton}>Home</button>
 			<h1>Your Notes</h1>
 			<button className="refresh-button" onClick={loadList} >Refresh</button>
+			<button className="add-button" onClick={() => navigate("/NoteEdit")}>+ New</button>
 		</div>
 	
 	
