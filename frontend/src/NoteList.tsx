@@ -323,7 +323,7 @@ function NotePage() {
 	}
 	
 	function homeButton() {
-		navigate("/");
+		navigate("/main");
 	}
 	
 	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {

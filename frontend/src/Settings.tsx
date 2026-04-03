@@ -30,7 +30,7 @@ function Settings() {
 	const [theme, setSetTheme] = useState(getTheme());
 	
 	function homeButton() {
-		navigate("/");
+		navigate("/main");
 	}
 	
 	function updateChanges() {

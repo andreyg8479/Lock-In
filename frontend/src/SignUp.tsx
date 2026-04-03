@@ -49,7 +49,7 @@ const SignUp: React.FC = () => {
 			alert("Warning: If you forget your password, your data will be UNRECOVERAVBLE");
 
 			// Step 3: Navigate to home
-			navigate("/");
+			navigate("/main");
 
 		} catch (e) {
 			console.log(String(e));
