@@ -51,6 +51,9 @@ function Home() {
 			<button type="button" onClick={() => navigate("/Settings")}>
 				Settings
 			</button>
+			<button type="button" onClick={() => navigate("/DeleteAll")}>
+				Delete All Data
+			</button>
 		</div>
 	);
 }
