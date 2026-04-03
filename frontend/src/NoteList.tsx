@@ -10,6 +10,26 @@ import './NoteList.css'
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
+type DateFilterField = 'created' | 'updated'
+
+function notePassesDateRange(
+	note: DisplayNote,
+	field: DateFilterField,
+	dateFrom: string,
+	dateTo: string
+): boolean {
+	if (!dateFrom && !dateTo) return true
+	const t = new Date(field === 'created' ? note.created_at : note.updated_at).getTime()
+	if (Number.isNaN(t)) return false
+	const fromMs = dateFrom
+		? new Date(`${dateFrom}T00:00:00`).getTime()
+		: null
+	const toMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null
+	if (fromMs !== null && t < fromMs) return false
+	if (toMs !== null && t > toMs) return false
+	return true
+}
+
 /** Set to false when login works again — shows demo server + client rows without auth. */
 const FAKE_NOTE_LIST_PREVIEW = false
 
@@ -79,8 +99,12 @@ function NotePage() {
 	const [sortBy, setSortBy] = useState<SortOption>('byName');
 	const [showTypes, setShowTypes] = useState<NoteType | 'all'>('all');
 	const [searchTerm, setSearchTerm] = useState<string>('');
+	const [dateFilterField, setDateFilterField] = useState<DateFilterField>('updated');
+	const [dateFrom, setDateFrom] = useState<string>('');
+	const [dateTo, setDateTo] = useState<string>('');
 	
 	const [isListHidden, setIsListHidden] = useState<boolean>(false);
+	const notesCacheRef = useRef<DisplayNote[]>([]);
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	const hideCombo = {
 		key: getKey(),
@@ -99,6 +123,10 @@ function NotePage() {
 	useEffect(() => {
 		sortByRef.current = sortBy;
 	}, [sortBy]);
+
+	useEffect(() => {
+		displayNotes(notesCacheRef.current);
+	}, [searchTerm, sortBy, dateFilterField, dateFrom, dateTo, showTypes, isListHidden]);
 
 	useKeyComboDetector(hideCombo, () => {
 		hideButtonRef.current?.click();
@@ -159,13 +187,16 @@ function NotePage() {
 
 	async function loadList() {
 		if (FAKE_NOTE_LIST_PREVIEW) {
-			displayNotes(fakeDemoNotes())
+			const notes = fakeDemoNotes()
+			notesCacheRef.current = notes
+			displayNotes(notes)
 			return
 		}
 
 		let allNotes: DisplayNote[] = [];
 
 		if (!userId || !vaultKey) {
+			notesCacheRef.current = []
 			displayNotes([]);
 			return;
 		}
@@ -235,14 +266,19 @@ function NotePage() {
 			}
 		}
 
+		notesCacheRef.current = allNotes
 		displayNotes(allNotes);
 	}
 
 	function displayNotes(notes: DisplayNote[], term = searchTerm, sort = sortBy) {
 	
-		const filtered = notes.filter(note =>
-			note.note_title.toLowerCase().includes(term.toLowerCase())
-		);
+		const filtered = notes
+			.filter(note =>
+				note.note_title.toLowerCase().includes(term.toLowerCase())
+			)
+			.filter(note =>
+				notePassesDateRange(note, dateFilterField, dateFrom, dateTo)
+			)
 	
 		const sorted = sortNotes(filtered, sort);
 		
@@ -379,6 +415,30 @@ function NotePage() {
 				<option value="audio">Audio Only</option>
 				<option value="image">Image Only</option>
 			</select>
+			<label className="date-filter-label">
+				<span className="date-filter-label-text">Date range</span>
+				<select
+					value={dateFilterField}
+					onChange={(e) => setDateFilterField(e.target.value as DateFilterField)}
+					aria-label="Filter dates by"
+				>
+					<option value="updated">Updated</option>
+					<option value="created">Created</option>
+				</select>
+				<input
+					type="date"
+					value={dateFrom}
+					onChange={(e) => setDateFrom(e.target.value)}
+					aria-label="Date from"
+				/>
+				<span className="date-filter-to" aria-hidden="true">–</span>
+				<input
+					type="date"
+					value={dateTo}
+					onChange={(e) => setDateTo(e.target.value)}
+					aria-label="Date to"
+				/>
+			</label>
 		</div>
 		<div className="list-container">
 			<div
