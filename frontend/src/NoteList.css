@@ -34,11 +34,80 @@ html, body {
 	border-bottom: 1px solid var(--color-border);
 }
 
-.date-filter-label {
-	display: flex;
+.date-filter-wrap {
+	position: relative;
+	flex-shrink: 0;
+}
+
+.date-filter-trigger {
+	display: inline-flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
+	padding: 8px 12px;
+	border-radius: 5px;
+	border: 1px solid var(--color-input-border);
+	background-color: var(--color-input-bg);
+	color: var(--color-text);
+	cursor: pointer;
+	font: inherit;
+}
+
+.date-filter-trigger-active {
+	border-color: var(--color-link);
+}
+
+.date-filter-active-indicator {
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--color-link);
+}
+
+.date-filter-popover {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	z-index: 20;
+	min-width: min(20rem, calc(100vw - 2rem));
+	padding: 12px;
+	border-radius: 8px;
+	border: 1px solid var(--color-border);
+	background-color: var(--color-surface);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	text-align: left;
+}
+
+.date-filter-popover-inner {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.date-filter-field-label {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+.date-filter-dates-row {
+	display: flex;
 	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 8px;
+}
+
+.date-filter-date-label {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+}
+
+.date-filter-sublabel {
+	font-size: 0.75rem;
+	opacity: 0.85;
 }
 
 .date-filter-label-text {
@@ -48,6 +117,7 @@ html, body {
 
 .date-filter-to {
 	opacity: 0.75;
+	padding-bottom: 8px;
 }
 
 .controls input {
@@ -60,7 +130,8 @@ html, body {
 }
 
 .controls select,
-.date-filter-label input[type="date"] {
+.date-filter-popover select,
+.date-filter-popover input[type="date"] {
 	padding: 8px;
 	border-radius: 5px;
 	border: 1px solid var(--color-input-border);
@@ -68,8 +139,7 @@ html, body {
 	color: var(--color-text);
 }
 
-.date-filter-label input[type="date"] {
-	flex: 0 1 auto;
+.date-filter-popover input[type="date"] {
 	min-width: 10rem;
 }
 
