@@ -1,10 +1,14 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { cleanup, render, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import Settings, { THEME_SELECT_ID, HIDEBIND_KEY_INPUT_ID } from "./Settings";
+import Settings, {
+	HIDEBIND_KEY_INPUT_ID,
+	PREF_TEXT_SIZE_INPUT_ID,
+	THEME_SELECT_ID,
+} from "./Settings";
 
 function renderSettings() {
 	return render(
@@ -14,6 +18,28 @@ function renderSettings() {
 	);
 }
 
+afterEach(() => {
+	cleanup();
+});
+
+describe("Settings text size", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	it("updates the preferred text size when the number input is changed", () => {
+		renderSettings();
+		const input = document.getElementById(
+			PREF_TEXT_SIZE_INPUT_ID,
+		) as HTMLInputElement;
+		expect(input.id).toBe(PREF_TEXT_SIZE_INPUT_ID);
+		expect(input.value).toBe("16");
+
+		fireEvent.change(input, { target: { value: "20" } });
+		expect(input.value).toBe("20");
+	});
+});
+
 describe("Settings theme", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -21,7 +47,9 @@ describe("Settings theme", () => {
 
 	it("updates the selected theme when the theme control is changed", () => {
 		renderSettings();
-		const select = screen.getByRole("combobox") as HTMLSelectElement;
+		const select = document.getElementById(
+			THEME_SELECT_ID,
+		) as HTMLSelectElement;
 		expect(select.id).toBe(THEME_SELECT_ID);
 		expect(select.value).toBe("light");
 

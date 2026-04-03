@@ -8,6 +8,8 @@ import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
 import { handleLogin } from "./crypto/lockinCrypto";
 import { requestLogin, send2fa, verify2fa } from "./api";
 
+export const LOGIN_EMAIL_INPUT_ID = "login-email";
+
 const Login: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -119,6 +121,7 @@ const Login: React.FC = () => {
 					<label className="auth-label">
 						<span>Email</span>
 						<input
+							id={LOGIN_EMAIL_INPUT_ID}
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}

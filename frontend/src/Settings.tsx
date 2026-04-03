@@ -21,6 +21,7 @@ import './Settings.css'
 
 export const THEME_SELECT_ID = "theme";
 export const HIDEBIND_KEY_INPUT_ID = "hide-keybind-key";
+export const PREF_TEXT_SIZE_INPUT_ID = "pref-text-size";
 
 const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
   navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
@@ -103,7 +104,7 @@ function Settings() {
 		
 			<div className="settings-row">
 Preferred Text Size: 
-				<input type="number" id="pref-text-size" value={prefSize} onChange={(e) => setSetPrefSize(Number(e.target.value))}/>
+				<input type="number" id={PREF_TEXT_SIZE_INPUT_ID} value={prefSize} onChange={(e) => setSetPrefSize(Number(e.target.value))}/>
 			</div>
 			
 			<div className="settings-row keybind-row">

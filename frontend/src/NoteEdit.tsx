@@ -11,6 +11,13 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 import './NoteEdit.css'
 
 export const NOTE_TYPE_SELECT_ID = "note-edit-note-type";
+export const ADD_EXTRA_PASSWORD_BUTTON_ID = "note-edit-add-extra-password";
+export const SAVE_TO_SERVER_BUTTON_ID = "note-edit-save-server";
+export const SAVE_TO_CLIENT_BUTTON_ID = "note-edit-save-client";
+export const NOTE_AUDIO_FILE_INPUT_ID = "note-edit-audio-file";
+export const NOTE_IMAGE_FILE_INPUT_ID = "note-edit-image-file";
+export const NOTE_INLINE_AUDIO_ID = "note-edit-inline-audio";
+export const NOTE_INLINE_IMAGE_ID = "note-edit-inline-image";
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
@@ -338,6 +345,7 @@ function NoteEdit() {
 	<div className="note-page">
 		<input
 			ref={audioFileInputRef}
+			id={NOTE_AUDIO_FILE_INPUT_ID}
 			type="file"
 			accept=".mp3,audio/mpeg"
 			style={{ display: 'none' }}
@@ -349,6 +357,7 @@ function NoteEdit() {
 		/>
 		<input
 			ref={imageFileInputRef}
+			id={NOTE_IMAGE_FILE_INPUT_ID}
 			type="file"
 			accept=".png,.jpg,.jpeg,image/png,image/jpeg"
 			style={{ display: 'none' }}
@@ -372,11 +381,11 @@ function NoteEdit() {
 			Exit
 			</button>
 			
-			<button onClick={doSaveServer}>
+			<button id={SAVE_TO_SERVER_BUTTON_ID} onClick={doSaveServer}>
 			{noteId && !ogNoteClient ? "Save to Server" : "Upload to Server"}
 			</button>
 			
-			<button onClick={doSaveClient}>
+			<button id={SAVE_TO_CLIENT_BUTTON_ID} onClick={doSaveClient}>
 			{noteId && ogNoteClient ? "Save to Client" : "Save to Client"}
 			</button>
 			
@@ -416,7 +425,7 @@ function NoteEdit() {
 				<button onClick={doCancel}>Cancel</button>
 			)}
 			
-			<button onClick={addExtraPassword}>
+			<button id={ADD_EXTRA_PASSWORD_BUTTON_ID} onClick={addExtraPassword}>
 			Add Extra Password
 			</button>
 			{/* more buttons probably */}
@@ -447,13 +456,22 @@ function NoteEdit() {
 
 			{noteType === 'audio' && content && (
 				<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
-					<audio controls src={`data:audio/mpeg;base64,${content}`} />
+					<audio
+						id={NOTE_INLINE_AUDIO_ID}
+						controls
+						src={`data:audio/mpeg;base64,${content}`}
+					/>
 				</div>
 			)}
 
 			{noteType === 'image' && content && (
 				<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
-					<img src={`data:image/png;base64,${content}`} alt={title} className="note-image" />
+					<img
+						id={NOTE_INLINE_IMAGE_ID}
+						src={`data:image/png;base64,${content}`}
+						alt={title}
+						className="note-image"
+					/>
 				</div>
 			)}
 
