@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "test:list": "node ./scripts/list-frontend-tests.mjs list",
+    "test:list-passed": "node ./scripts/list-frontend-tests.mjs passed"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -26,6 +28,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^16.5.0",
     "jsdom": "^29.0.1",
     "typescript": "~5.9.3",
