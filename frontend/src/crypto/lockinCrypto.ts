@@ -163,7 +163,7 @@ export async function handleLogin(data: IncomingLoginData): Promise<OutgoingLogi
             }
         };
 
-    } catch (e) {
+    } catch {
         return { ok: false, payload: { errorMessage: "Failed to unlock vault. Incorrect password or corrupted data." } };
     }
 }

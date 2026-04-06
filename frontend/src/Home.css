@@ -1,0 +1,45 @@
+/* Matches frontend2/homepage inline styles — scoped under .home-vault-page */
+.home-vault-page {
+	width: 100%;
+	min-height: 100vh;
+	text-align: initial;
+}
+
+.home-vault-page h1,
+.home-vault-page h2,
+.home-vault-page h3,
+.home-vault-page h4,
+.home-vault-page .headline {
+	font-family: "Manrope", sans-serif;
+}
+
+.home-vault-page {
+	font-family: "Inter", sans-serif;
+}
+
+.home-vault-page .material-symbols-outlined {
+	font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.home-vault-page .glass-panel {
+	background: rgba(23, 31, 51, 0.7);
+	backdrop-filter: blur(16px);
+}
+
+.home-vault-page .primary-gradient {
+	background: linear-gradient(135deg, #bbc3ff 0%, #3c59fd 100%);
+}
+
+/* Gradient fill on glyphs — must include -webkit- clip or browsers show a solid gradient box */
+.home-vault-page .hero-title-gradient {
+	background: linear-gradient(135deg, #bbc3ff 0%, #3c59fd 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	-webkit-text-fill-color: transparent;
+}
+
+/* App.css centers #root — undo for the vault landing */
+#root:has(.home-vault-page) {
+	text-align: initial;
+}

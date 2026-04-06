@@ -9,16 +9,16 @@ export function initDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = (event) => {
+        request.onerror = () => {
             console.error("IndexedDB error:", request.error);
             reject(request.error);
         };
 
-        request.onsuccess = (event) => {
+        request.onsuccess = () => {
             resolve(request.result);
         };
 
-        request.onupgradeneeded = (event) => {
+        request.onupgradeneeded = () => {
             const db = request.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME, { keyPath: "id" });

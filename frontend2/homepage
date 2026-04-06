@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lock-In | The Digital Vault</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#131b2e",
+                        "background": "#0b1326",
+                        "surface-dim": "#0b1326",
+                        "tertiary-container": "#007f32",
+                        "tertiary-fixed-dim": "#3ce36a",
+                        "on-tertiary-fixed-variant": "#00531e",
+                        "on-primary": "#001d93",
+                        "surface-container": "#171f33",
+                        "tertiary-fixed": "#69ff87",
+                        "error-container": "#93000a",
+                        "outline": "#8e90a2",
+                        "on-background": "#dae2fd",
+                        "primary-fixed": "#dee0ff",
+                        "primary-fixed-dim": "#bbc3ff",
+                        "on-surface-variant": "#c4c5d9",
+                        "surface-container-highest": "#2d3449",
+                        "tertiary": "#3ce36a",
+                        "surface-container-high": "#222a3d",
+                        "inverse-primary": "#2848ee",
+                        "on-tertiary-fixed": "#002108",
+                        "outline-variant": "#434656",
+                        "on-primary-fixed-variant": "#002ccd",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#3e4758",
+                        "on-secondary": "#283141",
+                        "on-error": "#690005",
+                        "inverse-surface": "#dae2fd",
+                        "surface-variant": "#2d3449",
+                        "primary": "#bbc3ff",
+                        "on-primary-fixed": "#000f5d",
+                        "secondary": "#bec7db",
+                        "surface-bright": "#31394d",
+                        "on-tertiary-container": "#c7ffc7",
+                        "on-primary-container": "#f0efff",
+                        "surface-tint": "#bbc3ff",
+                        "on-tertiary": "#003912",
+                        "secondary-fixed": "#dae2f8",
+                        "secondary-fixed-dim": "#bec7db",
+                        "surface-container-lowest": "#060e20",
+                        "surface": "#0b1326",
+                        "on-secondary-container": "#acb5c9",
+                        "on-secondary-fixed-variant": "#3e4758",
+                        "inverse-on-surface": "#283044",
+                        "primary-container": "#3c59fd",
+                        "error": "#ffb4ab",
+                        "on-surface": "#dae2fd",
+                        "on-secondary-fixed": "#131c2b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.7);
+            backdrop-filter: blur(16px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #bbc3ff 0%, #3c59fd 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen selection:bg-primary-container selection:text-on-primary-container" data-route="home">
+<!-- Top Navigation -->
+<header class="bg-[#0b1326] text-[#bbc3ff] fixed top-0 z-50 flex justify-between items-center w-full px-8 py-4 h-16 transition-colors duration-200">
+<div class="text-xl font-bold tracking-tighter text-[#bbc3ff] flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+            The Sentinel
+        </div>
+<!-- Desktop Nav Cluster -->
+<nav class="hidden md:flex items-center space-y-0 space-x-8">
+<a class="font-manrope tracking-tight font-bold headline-md text-[#bbc3ff] border-b-2 border-[#bbc3ff] pb-1 hover:bg-[#222a3d] transition-colors duration-200 scale-95 duration-100" href="/">Home</a>
+<a class="font-manrope tracking-tight font-bold headline-md text-[#434656] hover:text-[#bbc3ff] hover:bg-[#222a3d] transition-colors duration-200 scale-95 duration-100" href="/NoteList">Note List</a>
+<a class="font-manrope tracking-tight font-bold headline-md text-[#434656] hover:text-[#bbc3ff] hover:bg-[#222a3d] transition-colors duration-200 scale-95 duration-100" href="/NoteEdit">New Note</a>
+<a class="font-manrope tracking-tight font-bold headline-md text-[#434656] hover:text-[#bbc3ff] hover:bg-[#222a3d] transition-colors duration-200 scale-95 duration-100" href="/Settings">Settings</a>
+</nav>
+<div class="flex items-center gap-4">
+<button aria-label="Dark Mode" class="p-2 hover:bg-[#222a3d] rounded-md transition-colors">
+<span class="material-symbols-outlined text-[#bbc3ff]">dark_mode</span>
+</button>
+<button aria-label="Sign Up" class="hidden md:block bg-[#222a3d] px-4 py-1.5 rounded-md text-sm font-bold border border-outline-variant/20 hover:bg-[#2d3449] transition-all">Sign up</button>
+<button aria-label="Log In" class="primary-gradient text-on-primary-fixed px-4 py-1.5 rounded-md text-sm font-bold hover:opacity-90 transition-all shadow-lg">Log in</button>
+</div>
+</header>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative min-h-[921px] flex flex-col justify-center items-center px-6 overflow-hidden">
+<!-- Background Decorative Texture -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none">
+<div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-container rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-tertiary-container rounded-full blur-[100px]"></div>
+</div>
+<div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+<!-- Text Content -->
+<div class="lg:col-span-7 text-center lg:text-left">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-high border border-outline-variant/30 rounded-full mb-8">
+<span class="material-symbols-outlined text-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="text-xs font-bold tracking-widest uppercase text-on-surface-variant">Military Grade Encryption Active</span>
+</div>
+<h1 class="text-5xl lg:text-8xl font-extrabold tracking-tighter leading-tight mb-8">
+                        Welcome to <br/>
+<span class="text-transparent bg-clip-text primary-gradient">Lock-In!</span>
+</h1>
+<p class="text-on-surface-variant text-lg lg:text-xl max-w-xl mb-12 font-body leading-relaxed">
+                        The world's most secure digital vault for your sensitive notes. Forged in the midnight Navy of deep-security architecture, ensuring your data remains invisible to the world.
+                    </p>
+<!-- Bento Grid Inspired CTAs -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<a class="primary-gradient text-on-primary-fixed p-6 rounded-xl flex flex-col justify-between group hover:scale-[1.02] transition-transform shadow-2xl" href="/SignUp">
+<span class="material-symbols-outlined text-3xl mb-4" style="font-variation-settings: 'FILL' 1;">person_add</span>
+<div>
+<h3 class="text-xl font-bold headline tracking-tight">Create Vault</h3>
+<p class="text-on-primary-fixed/70 text-sm">Join the ecosystem of silence.</p>
+</div>
+</a>
+<a class="bg-surface-container-high hover:bg-surface-container-highest p-6 rounded-xl flex flex-col justify-between group hover:scale-[1.02] transition-transform border border-outline-variant/10" href="/NoteList">
+<span class="material-symbols-outlined text-3xl text-primary mb-4">description</span>
+<div>
+<h3 class="text-xl font-bold headline tracking-tight">Go To Note List</h3>
+<p class="text-on-surface-variant text-sm">Manage your encrypted records.</p>
+</div>
+</a>
+<a class="bg-surface-container-high hover:bg-surface-container-highest p-6 rounded-xl flex flex-col justify-between group hover:scale-[1.02] transition-transform border border-outline-variant/10" href="/NoteEdit">
+<span class="material-symbols-outlined text-3xl text-tertiary mb-4" style="font-variation-settings: 'FILL' 1;">add_box</span>
+<div>
+<h3 class="text-xl font-bold headline tracking-tight">Make New Note</h3>
+<p class="text-on-surface-variant text-sm">Seal a new thought today.</p>
+</div>
+</a>
+<a class="bg-surface-container-high hover:bg-surface-container-highest p-6 rounded-xl flex flex-col justify-between group hover:scale-[1.02] transition-transform border border-outline-variant/10" href="/Settings">
+<span class="material-symbols-outlined text-3xl text-secondary mb-4">settings</span>
+<div>
+<h3 class="text-xl font-bold headline tracking-tight">Vault Settings</h3>
+<p class="text-on-surface-variant text-sm">Configure security protocols.</p>
+</div>
+</a>
+</div>
+<div class="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
+<a class="text-primary font-bold hover:underline flex items-center gap-2 p-2" href="/Login">
+                            Return to Vault <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+<a class="text-error font-medium hover:bg-error/10 px-4 py-2 rounded-md flex items-center gap-2 transition-colors" href="/DeleteAll">
+<span class="material-symbols-outlined text-sm">delete_forever</span>
+                            Delete All Data
+                        </a>
+</div>
+</div>
+<!-- Visual Element -->
+<div class="lg:col-span-5 hidden lg:block">
+<div class="relative group">
+<!-- Glass Mockup -->
+<div class="glass-panel p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">fingerprint</span>
+</div>
+<div>
+<h4 class="text-on-surface font-bold">Biometric Authenticated</h4>
+<p class="text-on-surface-variant text-xs">Access Level: Maximum</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="h-4 bg-surface-container-highest w-3/4 rounded-full"></div>
+<div class="h-4 bg-surface-container-highest w-full rounded-full opacity-60"></div>
+<div class="h-4 bg-surface-container-highest w-1/2 rounded-full opacity-30"></div>
+</div>
+<div class="mt-12 p-4 bg-tertiary/10 rounded-xl border border-tertiary/20 flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">shield</span>
+<span class="text-tertiary text-sm font-bold">SHA-256 Protocol Enabled</span>
+</div>
+</div>
+<!-- Abstract Floating Shapes -->
+<div class="absolute -top-6 -right-6 w-24 h-24 bg-[#3ce36a] opacity-20 blur-xl rounded-full"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Section -->
+<section class="bg-surface-container-low py-24">
+<div class="max-w-6xl mx-auto px-6 text-center">
+<h2 class="text-3xl font-bold headline tracking-tight mb-16">Engineered for absolute privacy</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="flex flex-col items-center">
+<div class="mb-6 w-16 h-16 bg-surface-container flex items-center justify-center rounded-2xl shadow-xl">
+<span class="material-symbols-outlined text-primary text-3xl">key</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Zero-Knowledge</h3>
+<p class="text-on-surface-variant leading-relaxed">Even we can't see your data. Everything is encrypted client-side before it ever leaves your device.</p>
+</div>
+<div class="flex flex-col items-center">
+<div class="mb-6 w-16 h-16 bg-surface-container flex items-center justify-center rounded-2xl shadow-xl">
+<span class="material-symbols-outlined text-tertiary text-3xl">cloud_done</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Seamless Sync</h3>
+<p class="text-on-surface-variant leading-relaxed">Your vault stays up to date across all your authenticated devices without compromising security.</p>
+</div>
+<div class="flex flex-col items-center">
+<div class="mb-6 w-16 h-16 bg-surface-container flex items-center justify-center rounded-2xl shadow-xl">
+<span class="material-symbols-outlined text-secondary text-3xl">timer_3</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Self-Destruct</h3>
+<p class="text-on-surface-variant leading-relaxed">Set timers for sensitive entries to purge themselves permanently from existence.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-background py-16 px-8 border-t border-outline-variant/10">
+<div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex items-center gap-2">
+<span class="text-lg font-black text-[#bbc3ff] tracking-tighter">Lock-In</span>
+<span class="text-xs text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full ml-2">v2.4.0</span>
+</div>
+<nav class="flex flex-wrap justify-center gap-8 text-sm font-medium text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Security Audit</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Vault</a>
+<a class="hover:text-primary transition-colors" href="#">Contact Intelligence</a>
+</nav>
+<div class="text-on-surface-variant text-sm font-label">
+                © 2024 The Sentinel Group. All data encrypted.
+            </div>
+</div>
+</footer>
+<!-- Mobile Navigation Shell -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 glass-panel h-16 flex justify-around items-center z-50">
+<a class="flex flex-col items-center text-[#bbc3ff]" href="/">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center text-[#434656]" href="/NoteList">
+<span class="material-symbols-outlined">description</span>
+<span class="text-[10px] font-bold">List</span>
+</a>
+<a class="flex flex-col items-center text-[#434656]" href="/NoteEdit">
+<div class="bg-primary text-on-primary-fixed w-10 h-10 rounded-xl flex items-center justify-center -translate-y-4 shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+</div>
+</a>
+<a class="flex flex-col items-center text-[#434656]" href="/Settings">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold">Settings</span>
+</a>
+</div>
+</body></html>
