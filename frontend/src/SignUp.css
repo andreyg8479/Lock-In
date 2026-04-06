@@ -93,9 +93,16 @@
 	filter: brightness(0.98);
 }
 
-/* Link to Login on the sign up page */
-.Login {
+/* Login + home links on the sign up page */
+.auth-login-footer {
 	margin-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: center;
+}
+
+.Login {
 	text-align: center;
 	font-size: 0.85rem;
 	color: #9ca3af;

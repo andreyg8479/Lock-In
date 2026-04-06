@@ -131,9 +131,14 @@ const SignUp: React.FC = () => {
 						Sign Up
 					</button>
 				</form>
-                <div className="Login">
-                <Link to="/Login">(Login)</Link>
-                </div>
+				<div className="auth-login-footer">
+					<div className="Login">
+						<Link to="/Login">(Login)</Link>
+					</div>
+					<div className="Login">
+						<Link to="/Home">(Home)</Link>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
