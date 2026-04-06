@@ -93,6 +93,29 @@
 	filter: brightness(0.98);
 }
 
+.auth-button-secondary {
+	margin-top: 0;
+	background: transparent;
+	border: 1px solid rgba(148, 163, 184, 0.45);
+	color: #cbd5e1;
+	font-weight: 500;
+}
+
+.auth-button-secondary:hover {
+	box-shadow: 0 8px 16px rgba(15, 23, 42, 0.6);
+	filter: none;
+	background: rgba(30, 41, 59, 0.6);
+	border-color: #64748b;
+	color: #f1f5f9;
+}
+
+.auth-button-secondary:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+
 /* Link to Sign Up on the login page */
 .SignUp {
 	margin-top: 16px;

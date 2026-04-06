@@ -23,56 +23,80 @@ const Login: React.FC = () => {
 	const loginResultRef = useRef<{ vaultKey: CryptoKey } | null>(null);
 	const loginResponseRef = useRef<any>(null);
 
+	const verifyPasswordAgainstServer = async () => {
+		if (!email || !password) {
+			throw new Error("Email and password are required");
+		}
+
+		const response = await requestLogin({ email });
+
+		const requiredFields = [
+			"kdf", "iterations", "salt", "cipher", "iv",
+			"aes_key_length", "gcm_iv_length", "wrapped_master_key", "version"
+		];
+		const missing = requiredFields.filter(field => !response[field]);
+		if (missing.length > 0) {
+			throw new Error(`User data corrupted (missing definitions for: ${missing.join(", ")}). Please sign up again.`);
+		}
+
+		const artifacts: SignupCryptoArtifacts = {
+			kdf: response.kdf,
+			kdfIterations: response.iterations,
+			saltB64: response.salt,
+			cipher: response.cipher,
+			ivB64: response.iv,
+			aesKeyLength: response.aes_key_length,
+			gcmIVLength: response.gcm_iv_length,
+			wrappedMasterKeyB64: response.wrapped_master_key,
+			v: response.version
+		};
+
+		const result = await handleLogin({
+			email: response.email,
+			username: response.username,
+			attemptedPassword: password,
+			artifacts: artifacts
+		});
+
+		if (!result.ok) {
+			throw new Error(result.payload.errorMessage);
+		}
+
+		return { response, loginResult: result.payload };
+	};
+
 	const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		if (!email || !password) return;
 
 		setLoading(true);
 		try {
-			// Step 1: Fetch crypto metadata from server
-			const response = await requestLogin({ email });
+			const { response, loginResult } = await verifyPasswordAgainstServer();
 
-			// Validate that all necessary crypto artifacts are present
-			const requiredFields = [
-				"kdf", "iterations", "salt", "cipher", "iv",
-				"aes_key_length", "gcm_iv_length", "wrapped_master_key", "version"
-			];
-			const missing = requiredFields.filter(field => !response[field]);
-			if (missing.length > 0) {
-				throw new Error(`User data corrupted (missing definitions for: ${missing.join(", ")}). Please sign up again.`);
-			}
-
-			const artifacts: SignupCryptoArtifacts = {
-				kdf: response.kdf,
-				kdfIterations: response.iterations,
-				saltB64: response.salt,
-				cipher: response.cipher,
-				ivB64: response.iv,
-				aesKeyLength: response.aes_key_length,
-				gcmIVLength: response.gcm_iv_length,
-				wrappedMasterKeyB64: response.wrapped_master_key,
-				v: response.version
-			};
-
-			// Step 2: Attempt to unwrap the master key to verify password FIRST
-			const result = await handleLogin({
-				email: response.email,
-				username: response.username,
-				attemptedPassword: password,
-				artifacts: artifacts
-			});
-
-			if (!result.ok) {
-				throw new Error(result.payload.errorMessage);
-			}
-
-			// Password is correct — store results for use after 2FA
-			loginResultRef.current = result.payload;
+			loginResultRef.current = loginResult;
 			loginResponseRef.current = response;
 
-			// Step 3: Only now send the 2FA code
 			await send2fa({ email });
 			setStep("2fa");
+		} catch (error: any) {
+			console.error("Login failed:", error);
+			alert(error.message || "Login failed");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleLoginWithout2fa = async () => {
+		if (!email || !password) return;
+
+		setLoading(true);
+		try {
+			const { response, loginResult } = await verifyPasswordAgainstServer();
+
+			setUserId(response.id);
+			setVaultKey(loginResult.vaultKey);
+			setUsername(response.username);
+			navigate("/main");
 		} catch (error: any) {
 			console.error("Login failed:", error);
 			alert(error.message || "Login failed");
@@ -145,6 +169,14 @@ const Login: React.FC = () => {
 
 					<button type="submit" className="auth-button" disabled={loading}>
 						{loading ? "Verifying..." : "Login"}
+					</button>
+					<button
+						type="button"
+						className="auth-button auth-button-secondary"
+						disabled={loading}
+						onClick={() => void handleLoginWithout2fa()}
+					>
+						Sign in without 2FA
 					</button>
 				</form>
 				)}
