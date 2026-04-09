@@ -114,6 +114,31 @@ function Settings() {
 		
 		alert("2FA sucessfully removed");
 	}
+	
+	
+	function add2FA() {
+		if (false) { //not logged into the server
+			alert("No Connection");
+			return;
+		}
+		
+		if (false) { //has have 2fa set up
+			alert("2FA is already on this account");
+			return;
+		}
+		
+		const email = prompt("Enter Your Email");
+		const pattern = /@.+\./;
+		if (!pattern.test(email)) {
+			alert("Invalid Email");
+			return;
+		}
+		
+		
+		//add 2fa to the account
+		
+		alert("2FA sucessfully added");
+	}
 
   return (
 	<div className="settings-page">
@@ -175,6 +200,9 @@ Theme:
 			
 			<div className="settings-row">
 2FA:
+				<button className="danger-button" onClick={add2FA}>
+					Add 2FA
+				</button>
 				<button className="danger-button" onClick={remove2FA}>
 					Remove 2FA
 				</button>
