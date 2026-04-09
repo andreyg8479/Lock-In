@@ -87,6 +87,33 @@ function Settings() {
 		alert("Settings Updated Successfully");
 	
 	}
+	
+	function remove2FA() {
+		if (false) { //not logged into the server
+			alert("No Connection");
+			return;
+		}
+		
+		if (false) { //dont have 2fa set up
+			alert("2FA is already not on this account");
+			return;
+		}
+		
+		const pass = prompt("Enter Your Password");
+		const realpass = ""; //get the password from the server
+		
+		if (realpass != pass) {
+			alert("Password Incorrect");
+			return;
+		}
+		
+		
+		//do 2fa here
+		
+		//if it passes, remove 2fa for the user
+		
+		alert("2FA sucessfully removed");
+	}
 
   return (
 	<div className="settings-page">
@@ -143,6 +170,14 @@ Theme:
 				  <option value="light">Light</option>
 				  <option value="dark">Dark</option>
 				</select>
+			</div>
+			
+			
+			<div className="settings-row">
+2FA:
+				<button className="danger-button" onClick={remove2FA}>
+					Remove 2FA
+				</button>
 			</div>
 			
 		</div>
