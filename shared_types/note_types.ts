@@ -1,4 +1,4 @@
-export type NoteType = 'text' | 'audio' | 'image';
+export type NoteType = 'text' | 'audio' | 'image' | 'video';
 
 export type EncryptedNote = {
     user_id: string,

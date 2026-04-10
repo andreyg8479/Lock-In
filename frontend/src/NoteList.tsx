@@ -504,6 +504,7 @@ function NotePage() {
 				<option value="text">Text Only</option>
 				<option value="audio">Audio Only</option>
 				<option value="image">Image Only</option>
+				<option value="video">Video Only</option>
 			</select>
 			<div className="date-filter-wrap" ref={dateFilterWrapRef}>
 				<button
