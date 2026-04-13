@@ -18,6 +18,8 @@ export const NOTE_AUDIO_FILE_INPUT_ID = "note-edit-audio-file";
 export const NOTE_IMAGE_FILE_INPUT_ID = "note-edit-image-file";
 export const NOTE_INLINE_AUDIO_ID = "note-edit-inline-audio";
 export const NOTE_INLINE_IMAGE_ID = "note-edit-inline-image";
+export const NOTE_VIDEO_FILE_INPUT_ID = "note-edit-video-file";
+export const NOTE_INLINE_VIDEO_ID = "note-edit-inline-video";
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
 
@@ -43,6 +45,7 @@ function NoteEdit() {
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	const audioFileInputRef = useRef<HTMLInputElement | null>(null);
 	const imageFileInputRef = useRef<HTMLInputElement | null>(null);
+	const videoFileInputRef = useRef<HTMLInputElement | null>(null);
 	
 	const [extraPassword, setExtraPassword] = useState(false);
 	const [secondPasswordB64, setSecondPasswordB64] = useState<string | null>(null);
@@ -255,12 +258,13 @@ function NoteEdit() {
 		'audio/mpeg': 'audio',
 		'image/png': 'image',
 		'image/jpeg': 'image',
+		'video/mp4': 'video',
 	};
 
 	const processFile = async (file: File) => {
 		const detectedType = ACCEPTED_MIME_TYPES[file.type];
 		if (!detectedType) {
-			alert("Unsupported file type. Accepted: MP3, PNG, JPEG.");
+			alert("Unsupported file type. Accepted: MP3, PNG, JPEG, MP4.");
 			return;
 		}
 		if (file.size > MAX_FILE_SIZE) {
@@ -285,6 +289,8 @@ function NoteEdit() {
 			audioFileInputRef.current?.click();
 		} else if (noteType === 'image') {
 			imageFileInputRef.current?.click();
+		} else if (noteType === 'video') {
+			videoFileInputRef.current?.click();
 		}
 	}
 
@@ -367,6 +373,18 @@ function NoteEdit() {
 				e.target.value = '';
 			}}
 		/>
+		<input
+			ref={videoFileInputRef}
+			id={NOTE_VIDEO_FILE_INPUT_ID}
+			type="file"
+			accept=".mp4,video/mp4"
+			style={{ display: 'none' }}
+			onChange={(e) => {
+				const file = e.target.files?.[0];
+				if (file) processFile(file);
+				e.target.value = '';
+			}}
+		/>
 	
 		<input
 			className={`note-title ${isNoteInfoHidden ? "note-info-hidden" : ""}`}
@@ -411,6 +429,7 @@ function NoteEdit() {
 				<option value="text">Text</option>
 				<option value="audio">Audio</option>
 				<option value="image">Image</option>
+				<option value="video">Video</option>
 			</select>
 			
 			<button onClick={doDelete}>
@@ -471,6 +490,17 @@ function NoteEdit() {
 						src={`data:image/png;base64,${content}`}
 						alt={title}
 						className="note-image"
+					/>
+				</div>
+			)}
+
+			{noteType === 'video' && content && (
+				<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+					<video
+						id={NOTE_INLINE_VIDEO_ID}
+						controls
+						className="note-video"
+						src={`data:video/mp4;base64,${content}`}
 					/>
 				</div>
 			)}

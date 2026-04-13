@@ -36,6 +36,36 @@ export async function sendEmail(params: SendEmailParams): Promise<{ ok: boolean;
     return { ok: true };
 }
 
+export type SendNewDeviceLoginEmailParams = {
+    /** Account holder address to notify */
+    email: string;
+    /** Device description (e.g. user agent or label) when available */
+    device: string;
+    /** When the sign-in occurred, as a string for display (e.g. locale-formatted or ISO) */
+    time: string;
+};
+
+/**
+ * Notify the user that a new device signed in.
+ */
+export async function sendNewDeviceLoginEmail(
+    params: SendNewDeviceLoginEmailParams
+): Promise<{ ok: boolean; error?: string }> {
+    const { email, device, time } = params;
+    return sendEmail({
+        to: email,
+        subject: "New sign-in to your LockIn account",
+        html:
+            `<p>A new device just signed in to your LockIn account.</p>` +
+            `<ul>` +
+            `<li><strong>Device:</strong> ${device}</li>` +
+            `<li><strong>Time:</strong> ${time}</li>` +
+            `</ul>` +
+            `<p>If this was you, you can ignore this message. If you do not recognize this activity, ` +
+            `secure your account by changing your password and reviewing your sessions.</p>`
+    });
+}
+
 const TWO_FA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const TWO_FA_LENGTH = 6;
 const CODE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
