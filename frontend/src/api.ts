@@ -87,3 +87,15 @@ export async function send2fa(payload: { email: string }) {
 export async function verify2fa(payload: { email: string; code: string }) {
     return request("POST", "/api/auth/2fa/verify", payload);
 }
+
+export async function get2faStatus(payload: { email: string }): Promise<{ twoFaEnabled: boolean }> {
+    return request("POST", "/api/auth/2fa/status", payload);
+}
+
+export async function enable2fa(payload: { email: string }) {
+    return request("POST", "/api/auth/2fa/enable", payload);
+}
+
+export async function disable2fa(payload: { email: string; code: string }) {
+    return request("POST", "/api/auth/2fa/disable", payload);
+}

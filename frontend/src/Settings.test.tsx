@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { cleanup, render, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { AuthProvider } from "./AuthContext";
 import Settings, {
 	HIDEBIND_KEY_INPUT_ID,
 	PREF_TEXT_SIZE_INPUT_ID,
@@ -13,7 +14,9 @@ import Settings, {
 function renderSettings() {
 	return render(
 		<MemoryRouter>
-			<Settings />
+			<AuthProvider>
+				<Settings />
+			</AuthProvider>
 		</MemoryRouter>,
 	);
 }

@@ -17,11 +17,12 @@ const Login: React.FC = () => {
 	const [step, setStep] = useState<"credentials" | "2fa">("credentials");
 	const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
-	const { setUserId, setVaultKey, setUsername } = useAuth();
+	const { setUserId, setVaultKey, setUsername, setEmail: setAuthEmail } = useAuth();
 
 	// Store successful password verification results for use after 2FA
 	const loginResultRef = useRef<{ vaultKey: CryptoKey } | null>(null);
 	const loginResponseRef = useRef<any>(null);
+	const twoFaEnabledRef = useRef<boolean>(true);
 
 	const verifyPasswordAgainstServer = async () => {
 		if (!email || !password) {
@@ -75,9 +76,20 @@ const Login: React.FC = () => {
 
 			loginResultRef.current = loginResult;
 			loginResponseRef.current = response;
+			twoFaEnabledRef.current = response.two_fa_enabled !== false;
 
-			await send2fa({ email });
-			setStep("2fa");
+			if (response.two_fa_enabled === false) {
+				// 2FA disabled — skip straight to login
+				setUserId(response.id);
+				setVaultKey(loginResult.vaultKey);
+				setUsername(response.username);
+				setAuthEmail(email);
+				navigate("/main");
+			} else {
+				// 2FA enabled — send code and go to verification step
+				await send2fa({ email });
+				setStep("2fa");
+			}
 		} catch (error: any) {
 			console.error("Login failed:", error);
 			alert(error.message || "Login failed");
@@ -96,6 +108,7 @@ const Login: React.FC = () => {
 			setUserId(response.id);
 			setVaultKey(loginResult.vaultKey);
 			setUsername(response.username);
+			setAuthEmail(email);
 			navigate("/main");
 		} catch (error: any) {
 			console.error("Login failed:", error);
@@ -125,6 +138,7 @@ const Login: React.FC = () => {
 			setUserId(response.id);
 			setVaultKey(loginResult.vaultKey);
 			setUsername(response.username);
+			setAuthEmail(email);
 			navigate("/main");
 		} catch (error: any) {
 			console.error("Login failed:", error);

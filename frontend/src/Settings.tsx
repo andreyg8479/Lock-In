@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
  getTheme, 
  setTheme,
@@ -17,6 +17,8 @@ import {
  setCtrl
  } from "./SettingsMem";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "./AuthContext";
+import { get2faStatus, send2fa, disable2fa, enable2fa } from "./api";
 import './Settings.css'
 
 export const THEME_SELECT_ID = "theme";
@@ -29,6 +31,7 @@ const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
 function Settings() {
 
 	const navigate = useNavigate();
+	const { email } = useAuth();
 	
 	const [prefSize, setSetPrefSize] = useState(getPrefSize());
 	
@@ -38,6 +41,21 @@ function Settings() {
 	const [ctrl, setSetCtrl] = useState(getCtrl());
 	
 	const [theme, setSetTheme] = useState(getTheme());
+
+	const [twoFaEnabled, setTwoFaEnabled] = useState<boolean | null>(null);
+	const [twoFaLoading, setTwoFaLoading] = useState(false);
+	const [disableStep, setDisableStep] = useState<"idle" | "awaiting-code">("idle");
+	const [disableCode, setDisableCode] = useState("");
+
+	useEffect(() => {
+		if (email) {
+			get2faStatus({ email }).then((res) => {
+				setTwoFaEnabled(res.twoFaEnabled);
+			}).catch(() => {
+				// Could not fetch status — leave as null
+			});
+		}
+	}, [email]);
 
 	const comboLabel = useMemo(() => {
 		const parts: string[] = [];
@@ -88,56 +106,77 @@ function Settings() {
 	
 	}
 	
-	function remove2FA() {
-		if (false) { //not logged into the server
-			alert("No Connection");
+	async function remove2FA() {
+		if (!email) {
+			alert("You must be logged in to change 2FA settings.");
 			return;
 		}
-		
-		if (false) { //dont have 2fa set up
+
+		if (twoFaEnabled === false) {
 			alert("2FA is already not on this account");
 			return;
 		}
-		
-		const pass = prompt("Enter Your Password");
-		const realpass = ""; //get the password from the server
-		
-		if (realpass != pass) {
-			alert("Password Incorrect");
+
+		if (disableStep === "idle") {
+			// Step 1: send a confirmation PIN
+			setTwoFaLoading(true);
+			try {
+				await send2fa({ email });
+				setDisableStep("awaiting-code");
+				alert("A verification code has been sent to your email. Enter it below to confirm disabling 2FA.");
+			} catch (e: any) {
+				alert(e.message || "Failed to send verification code");
+			} finally {
+				setTwoFaLoading(false);
+			}
 			return;
 		}
-		
-		
-		//do 2fa here
-		
-		//if it passes, remove 2fa for the user
-		
-		alert("2FA sucessfully removed");
+
+		if (disableStep === "awaiting-code") {
+			// Step 2: verify the PIN and disable
+			if (!disableCode || disableCode.length !== 6) {
+				alert("Please enter the 6-character code sent to your email.");
+				return;
+			}
+			setTwoFaLoading(true);
+			try {
+				await disable2fa({ email, code: disableCode });
+				setTwoFaEnabled(false);
+				setDisableStep("idle");
+				setDisableCode("");
+				alert("2FA successfully removed");
+			} catch (e: any) {
+				alert(e.message || "Failed to disable 2FA");
+			} finally {
+				setTwoFaLoading(false);
+			}
+		}
 	}
 	
 	
-	function add2FA() {
-		if (false) { //not logged into the server
-			alert("No Connection");
+	async function add2FA() {
+		if (!email) {
+			alert("You must be logged in to change 2FA settings.");
 			return;
 		}
-		
-		if (false) { //has have 2fa set up
+
+		if (twoFaEnabled === true) {
 			alert("2FA is already on this account");
 			return;
 		}
 		
-		const email = prompt("Enter Your Email");
-		const pattern = /@.+\./;
-		if (!pattern.test(email)) {
-			alert("Invalid Email");
-			return;
+		setTwoFaLoading(true);
+		try {
+			await enable2fa({ email });
+			setTwoFaEnabled(true);
+			setDisableStep("idle");
+			setDisableCode("");
+			alert("2FA successfully added");
+		} catch (e: any) {
+			alert(e.message || "Failed to enable 2FA");
+		} finally {
+			setTwoFaLoading(false);
 		}
-		
-		
-		//add 2fa to the account
-		
-		alert("2FA sucessfully added");
 	}
 
   return (
@@ -199,13 +238,23 @@ Theme:
 			
 			
 			<div className="settings-row">
-2FA:
-				<button className="danger-button" onClick={add2FA}>
+2FA: {twoFaEnabled === null ? "Loading..." : twoFaEnabled ? "Enabled" : "Disabled"}
+				<button className="danger-button" onClick={add2FA} disabled={twoFaLoading || twoFaEnabled === true}>
 					Add 2FA
 				</button>
-				<button className="danger-button" onClick={remove2FA}>
-					Remove 2FA
+				<button className="danger-button" onClick={remove2FA} disabled={twoFaLoading || twoFaEnabled === false}>
+					{disableStep === "awaiting-code" ? "Confirm Disable" : "Remove 2FA"}
 				</button>
+				{disableStep === "awaiting-code" && (
+					<input
+						type="text"
+						value={disableCode}
+						onChange={(e) => setDisableCode(e.target.value.toUpperCase())}
+						placeholder="Enter 6-character code"
+						maxLength={6}
+						className="auth-input"
+					/>
+				)}
 			</div>
 			
 		</div>
