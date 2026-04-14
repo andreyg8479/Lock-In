@@ -20,6 +20,7 @@ function PasswordMemorizer() {
 		
 		<div>
 			<input
+				type={hidden ? "password" : "text"}
 				value={top}
 				onChange={(e) => setTop(e.target.value)}
 				placeholder = "Enter Password"
