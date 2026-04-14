@@ -9,6 +9,7 @@ function PasswordMemorizer() {
 	const [top, setTop] = useState("");
 	const [bottom, setBottom] = useState("");
 	const [hidden, setHidden] = useState(false);
+	const [bottomColor, setBottomColor] = useState("white");
 
 	function homeButton() {
 		navigate("/main");
@@ -34,12 +35,18 @@ function PasswordMemorizer() {
 		
 		if (newBottom != trimTop) {
 			alert("Incorrect!");
+			setBottomColor("red");
 			setBottom("");
+			return;
 		}
 		
 		if (newBottom.length == top.length) {
 			setBottom("");
+			setBottomColor("green");
+			return;
 		}
+		
+		setBottomColor("white");
 	}
 	
   return (
@@ -62,8 +69,9 @@ function PasswordMemorizer() {
 		
 		<div style={{ marginBottom: "15px" }}>
 			<input
-				style={{ width: "100%", padding: "8px" }}
+				style={{ width: "100%", padding: "8px", backgroundColor: bottomColor }}
 				type="password"
+				
 				value={bottom}
 				onChange={(e) => {bottomChanged(e.target.value);}}
 				placeholder = "Try to retype here"
