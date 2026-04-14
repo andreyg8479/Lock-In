@@ -13,6 +13,34 @@ function PasswordMemorizer() {
 	function homeButton() {
 		navigate("/main");
 	}
+
+	function bottomChanged(newBottom) {
+	
+		setBottom(newBottom);
+	
+		if (newBottom == "") {
+			return;
+		}
+		
+		if (top == "") {
+			return;
+		}
+		
+		const trimTop = top.substring(0, newBottom.length);
+		
+		console.log(top);
+		console.log(newBottom);
+		console.log(trimTop);
+		
+		if (newBottom != trimTop) {
+			alert("Incorrect!");
+			setBottom("");
+		}
+		
+		if (newBottom.length == top.length) {
+			setBottom("");
+		}
+	}
 	
   return (
 	<div style={{ padding: "20px", maxWidth: "400px", margin: "auto" }}>
@@ -37,7 +65,7 @@ function PasswordMemorizer() {
 				style={{ width: "100%", padding: "8px" }}
 				type="password"
 				value={bottom}
-				onChange={(e) => setBottom(e.target.value)}
+				onChange={(e) => {bottomChanged(e.target.value);}}
 				placeholder = "Try to retype here"
 			/>
 		</div>
