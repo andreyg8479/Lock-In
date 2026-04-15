@@ -301,7 +301,27 @@ function NoteEdit() {
 	const addExtraPassword = async () => {
 		
 		if (extraPassword) {
-			alert("This note already has an extra password!");
+			
+			const checkPass = prompt("Please insert the current extra password to remove it");
+			
+			const curPass = ""; //TODO, get the current extra password from the database
+			
+			if (checkPass == curPass) {
+			
+				//TODO, remove extra password from database here
+			
+				setExtraPassword(false);
+				alert("Extra Password Removed");
+			
+			} else {
+			
+				alert("Failed: Password was incorrect");
+				return;
+				
+			}
+			
+			
+			
 		} else {
 			const extraPass = prompt("Please enter the new extra password. (THIS CANNOT BE CHANGED)");
 			
@@ -445,7 +465,7 @@ function NoteEdit() {
 			)}
 			
 			<button id={ADD_EXTRA_PASSWORD_BUTTON_ID} onClick={addExtraPassword}>
-			Add Extra Password
+			{extraPassword ? "Add Extra Password" : "Remove Extra Password"}
 			</button>
 			{/* more buttons probably */}
 			
