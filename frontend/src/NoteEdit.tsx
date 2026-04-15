@@ -465,7 +465,7 @@ function NoteEdit() {
 			)}
 			
 			<button id={ADD_EXTRA_PASSWORD_BUTTON_ID} onClick={addExtraPassword}>
-			{extraPassword ? "Add Extra Password" : "Remove Extra Password"}
+			{extraPassword ? "Remove Extra Password" : "Add Extra Password"}
 			</button>
 			{/* more buttons probably */}
 			
