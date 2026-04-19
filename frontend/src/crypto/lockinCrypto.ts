@@ -12,6 +12,15 @@ export type SignupCryptoArtifacts = {
     wrappedMasterKeyB64: string;
 
     v: 1;
+
+    // Optional RSA-OAEP key pair fields for E2EE note sharing.
+    // Present when the user's asymmetric key pair is generated (at signup or later).
+    public_key_spki_b64?: string;
+    encrypted_private_key_b64?: string;
+    private_key_iv_b64?: string;
+    asymmetric_key_algorithm?: "RSA-OAEP";
+    asymmetric_key_length?: number;
+    asymmetric_hash?: "SHA-256";
 };
 
 // What the signup logic gets back from lockinCrypto, i.e. successfully generated artifacts
@@ -69,6 +78,11 @@ const PDKDF2_ITERATIONS = 310_000; // may be a bit too high, so we can tweak thi
 const SALT_LEN = 16; // bytes
 const IV_LEN = 12; // bytes (96 bits) for AES-GCM
 const MASTER_KEY_LEN = 32; // bytes for AES-256 (256 bits)
+
+// RSA-OAEP constants for E2EE note sharing (not yet used in any functions)
+export const RSA_KEY_LENGTH = 2048;
+export const RSA_HASH = "SHA-256";
+export const RSA_ALGORITHM = "RSA-OAEP";
 
 // Generate the crypto metadata to be associated with this account
 export async function generateSignupCredentials(data: IncomingSignupData): Promise<OutgoingSignupData> {
