@@ -9,6 +9,7 @@ import SignUp from "./SignUp";
 import DeleteAll from "./DeleteAll";
 import Settings from "./Settings";
 import ChangeMasterPassword from "./ChangeMasterPassword";
+import PasswordMemorizer from "./PasswordMemorizer";
 
 
 function PagesList() {
@@ -24,6 +25,7 @@ function PagesList() {
 				<Link to="/DeleteAll"> (DeleteAll)   </Link>
 				<Link to="/Settings"> (Settings)   </Link>
 				<Link to="/ChangeMasterPassword"> (ChangeMasterPassword)   </Link>
+				<Link to="/PasswordMemorizer"> (PasswordMemorizer)   </Link>
 			</div>
 		</div>
 	);
@@ -53,6 +55,9 @@ function Home() {
 			<button type="button" onClick={() => navigate("/DeleteAll")}>
 				Delete All Data
 			</button>
+			<button type="button" onClick={() => navigate("/PasswordMemorizer")}>
+				Password Memorizer
+			</button>
 		</div>
 	);
 }
@@ -75,6 +80,7 @@ function App() {
 			<Route path="/DeleteAll" element={<DeleteAll />} />
 			<Route path="/Settings" element={<Settings />} />
 			<Route path="/ChangeMasterPassword" element={<ChangeMasterPassword />} />
+			<Route path="/PasswordMemorizer" element={<PasswordMemorizer />} />
 		</Routes>
 	</Router>
   )
