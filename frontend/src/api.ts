@@ -8,17 +8,22 @@ const BASE_URL = "http://localhost:8080";
 
     Serves as a helper for other API functions after this.
 */
-async function request(method: string, path: string, body?: any) {
+async function request(method: string, path: string, body?: any, token?: string) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
 
     let response: Response;
     try {
         response = await fetch(BASE_URL + path, {
             method,
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers,
             body: body ? JSON.stringify(body) : undefined,
             signal: controller.signal
         });
@@ -98,4 +103,24 @@ export async function enable2fa(payload: { email: string }) {
 
 export async function disable2fa(payload: { email: string; code: string }) {
     return request("POST", "/api/auth/2fa/disable", payload);
+}
+
+// Create an authenticated session — sends auth hash, receives JWT
+export async function createSession(payload: { email: string; authHashB64: string }): Promise<{ ok: boolean; token: string }> {
+    return request("POST", "/api/auth/session", payload);
+}
+
+// Change the master password (requires JWT + optional 2FA code)
+export async function changeMasterPasswordApi(
+    payload: {
+        newSaltB64: string;
+        newIvB64: string;
+        newWrappedMasterKeyB64: string;
+        newAuthHashB64: string;
+        newIterations: number;
+        twoFaCode?: string;
+    },
+    token: string
+): Promise<{ ok: boolean; token: string; requires2fa?: boolean }> {
+    return request("PUT", "/api/auth/master-password", payload, token);
 }

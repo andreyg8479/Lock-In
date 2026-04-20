@@ -5,8 +5,8 @@ import "./Login.css";
 import { useAuth } from "./AuthContext";
 
 import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
-import { handleLogin } from "./crypto/lockinCrypto";
-import { requestLogin, send2fa, verify2fa } from "./api";
+import { handleLogin, deriveAuthHash, fromBase64 } from "./crypto/lockinCrypto";
+import { requestLogin, send2fa, verify2fa, createSession } from "./api";
 
 export const LOGIN_EMAIL_INPUT_ID = "login-email";
 
@@ -17,11 +17,12 @@ const Login: React.FC = () => {
 	const [step, setStep] = useState<"credentials" | "2fa">("credentials");
 	const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
-	const { setUserId, setVaultKey, setUsername, setEmail: setAuthEmail } = useAuth();
+	const { setUserId, setVaultKey, setUsername, setEmail: setAuthEmail, setToken } = useAuth();
 
 	// Store successful password verification results for use after 2FA
 	const loginResultRef = useRef<{ vaultKey: CryptoKey } | null>(null);
 	const loginResponseRef = useRef<any>(null);
+	const authHashRef = useRef<string | null>(null);
 	const twoFaEnabledRef = useRef<boolean>(true);
 
 	const verifyPasswordAgainstServer = async () => {
@@ -63,7 +64,14 @@ const Login: React.FC = () => {
 			throw new Error(result.payload.errorMessage);
 		}
 
-		return { response, loginResult: result.payload };
+		// Derive auth hash for server-side session creation
+		const authHashB64 = await deriveAuthHash(
+			password,
+			fromBase64(artifacts.saltB64),
+			artifacts.kdfIterations
+		);
+
+		return { response, loginResult: result.payload, authHashB64 };
 	};
 
 	const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -72,18 +80,21 @@ const Login: React.FC = () => {
 
 		setLoading(true);
 		try {
-			const { response, loginResult } = await verifyPasswordAgainstServer();
+			const { response, loginResult, authHashB64 } = await verifyPasswordAgainstServer();
 
 			loginResultRef.current = loginResult;
 			loginResponseRef.current = response;
+			authHashRef.current = authHashB64;
 			twoFaEnabledRef.current = response.two_fa_enabled !== false;
 
 			if (response.two_fa_enabled === false) {
-				// 2FA disabled — skip straight to login
+				// 2FA disabled — create session and log in
+				const session = await createSession({ email, authHashB64 });
 				setUserId(response.id);
 				setVaultKey(loginResult.vaultKey);
 				setUsername(response.username);
 				setAuthEmail(email);
+				setToken(session.token);
 				navigate("/main");
 			} else {
 				// 2FA enabled — send code and go to verification step
@@ -103,12 +114,14 @@ const Login: React.FC = () => {
 
 		setLoading(true);
 		try {
-			const { response, loginResult } = await verifyPasswordAgainstServer();
+			const { response, loginResult, authHashB64 } = await verifyPasswordAgainstServer();
 
+			const session = await createSession({ email, authHashB64 });
 			setUserId(response.id);
 			setVaultKey(loginResult.vaultKey);
 			setUsername(response.username);
 			setAuthEmail(email);
+			setToken(session.token);
 			navigate("/main");
 		} catch (error: any) {
 			console.error("Login failed:", error);
@@ -130,15 +143,18 @@ const Login: React.FC = () => {
 			// Use the already-verified login results from the password step
 			const response = loginResponseRef.current;
 			const loginResult = loginResultRef.current;
+			const authHashB64 = authHashRef.current;
 
-			if (!response || !loginResult) {
+			if (!response || !loginResult || !authHashB64) {
 				throw new Error("Session expired. Please try logging in again.");
 			}
 
+			const session = await createSession({ email, authHashB64 });
 			setUserId(response.id);
 			setVaultKey(loginResult.vaultKey);
 			setUsername(response.username);
 			setAuthEmail(email);
+			setToken(session.token);
 			navigate("/main");
 		} catch (error: any) {
 			console.error("Login failed:", error);

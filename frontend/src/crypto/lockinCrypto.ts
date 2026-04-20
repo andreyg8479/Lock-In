@@ -30,6 +30,7 @@ export type OutgoingSignupData =
       payload: {
         username: string;
         email: string;
+        authHashB64: string;
         artifacts: SignupCryptoArtifacts;
       };
     }
@@ -109,11 +110,15 @@ export async function generateSignupCredentials(data: IncomingSignupData): Promi
             toArrayBuffer(vaultKey) // "data"
         );
 
+        // Step 4: Derive auth hash for server-side password verification
+        const authHashB64 = await deriveAuthHash(data.password, salt, PDKDF2_ITERATIONS);
+
         return {
             ok: true,
             payload: {
                 username: data.username,
                 email: data.email,
+                authHashB64,
                 artifacts: {
                     kdf: "PBKDF2",
                     kdfIterations: PDKDF2_ITERATIONS,
@@ -329,6 +334,134 @@ export async function decryptFilenames(encryptedFilenames: string[], vaultKey: C
     }
 
     return decryptedNames;
+}
+
+// ---------------------------------------------------------------------------
+// Auth hash – server-side verifiable proof-of-password (Bitwarden-style).
+// Derives the same 256-bit master key via PBKDF2, then hashes it once more
+// with the original password as salt (1 iteration) to produce a value the
+// server can store (and later compare) without ever seeing the vault key.
+// ---------------------------------------------------------------------------
+export async function deriveAuthHash(
+    password: string,
+    salt: Uint8Array,
+    iterations: number
+): Promise<string> {
+    // Step 1 – derive the same master-key bits that deriveAesGcmKeyFromPassword uses
+    const baseKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(utf8Bytes(password)),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits"]
+    );
+    const masterKeyBits = await crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt: toArrayBuffer(salt), iterations, hash: "SHA-256" },
+        baseKey,
+        256
+    );
+
+    // Step 2 – one extra PBKDF2 round: masterKey as key-material, password as salt
+    const authBase = await crypto.subtle.importKey(
+        "raw",
+        masterKeyBits,
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits"]
+    );
+    const authBits = await crypto.subtle.deriveBits(
+        {
+            name: "PBKDF2",
+            salt: toArrayBuffer(utf8Bytes(password)),
+            iterations: 1,
+            hash: "SHA-256",
+        },
+        authBase,
+        256
+    );
+
+    return toBase64(new Uint8Array(authBits));
+}
+
+// ---------------------------------------------------------------------------
+// Re-wrap vault key – used when changing the master password.
+// The vault key itself stays the same so no note re-encryption is needed.
+// Returns new artifacts (salt, iv, wrappedMasterKeyB64) + new auth hash.
+// ---------------------------------------------------------------------------
+export type PasswordChangeResult =
+    | {
+          ok: true;
+          payload: {
+              newSaltB64: string;
+              newIvB64: string;
+              newWrappedMasterKeyB64: string;
+              newAuthHashB64: string;
+              newIterations: number;
+          };
+      }
+    | { ok: false; payload: { errorMessage: string } };
+
+export async function rewrapVaultKey(
+    oldPassword: string,
+    newPassword: string,
+    username: string,
+    email: string,
+    currentArtifacts: SignupCryptoArtifacts
+): Promise<PasswordChangeResult> {
+    try {
+        // --- Unwrap with old password ---
+        const oldSalt = fromBase64(currentArtifacts.saltB64);
+        const oldIv = fromBase64(currentArtifacts.ivB64);
+        const oldWrapped = fromBase64(currentArtifacts.wrappedMasterKeyB64);
+
+        const oldWrappingKey = await deriveAesGcmKeyFromPassword(
+            oldPassword,
+            oldSalt,
+            currentArtifacts.kdfIterations
+        );
+        const aad = utf8Bytes(`${username}\n${email}`);
+
+        const vaultKeyBytes = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: toArrayBuffer(oldIv), additionalData: toArrayBuffer(aad) },
+            oldWrappingKey,
+            toArrayBuffer(oldWrapped)
+        );
+
+        // --- Re-wrap with new password ---
+        const newSalt = randomBytes(SALT_LEN);
+        const newIv = randomBytes(IV_LEN);
+
+        const newWrappingKey = await deriveAesGcmKeyFromPassword(
+            newPassword,
+            newSalt,
+            PDKDF2_ITERATIONS
+        );
+
+        const newWrapped = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: toArrayBuffer(newIv), additionalData: toArrayBuffer(aad) },
+            newWrappingKey,
+            vaultKeyBytes
+        );
+
+        // --- Derive new auth hash ---
+        const newAuthHashB64 = await deriveAuthHash(newPassword, newSalt, PDKDF2_ITERATIONS);
+
+        return {
+            ok: true,
+            payload: {
+                newSaltB64: toBase64(newSalt),
+                newIvB64: toBase64(newIv),
+                newWrappedMasterKeyB64: toBase64(new Uint8Array(newWrapped)),
+                newAuthHashB64,
+                newIterations: PDKDF2_ITERATIONS,
+            },
+        };
+    } catch {
+        return {
+            ok: false,
+            payload: { errorMessage: "Failed to re-wrap vault key. Old password may be incorrect." },
+        };
+    }
 }
 
 export async function encryptSecondPassword(password: string, vaultKey: CryptoKey): Promise<string> {

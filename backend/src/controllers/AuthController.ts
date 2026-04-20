@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../supabaseClient";
 import { Request, Response } from "express";
+import { signToken } from "../utils/jwt";
+import { verify2faCode } from "../email/emailService";
 
 /*
 
@@ -15,7 +17,7 @@ export async function handleSignup(req: Request, res: Response) {
     try {
 
         // extract info from the HTTP payload
-        const { username, email, artifacts } = req.body;
+        const { username, email, artifacts, authHashB64 } = req.body;
 
         // Validate that these fields aren't emptyy
         if (!username || !email || !artifacts) {
@@ -59,7 +61,8 @@ export async function handleSignup(req: Request, res: Response) {
                 aes_key_length: artifacts.aesKeyLength,
                 gcm_iv_length: artifacts.gcmIVLength,
                 iv: artifacts.ivB64,
-                version: artifacts.v} as any // temporary fix to get TS to shut up
+                version: artifacts.v,
+                auth_hash_b64: authHashB64 || null} as any // temporary fix to get TS to shut up
             ]);
 
         // Something went wrong in the layer between here and DB
@@ -95,13 +98,10 @@ export async function handleLogin(req: Request, res: Response) {
             return res.status(400).json({ error: "Missing login information"});
         }
 
-        // TODO: don't return ALL info about the user, 
-        // just the crypto metadata (i.e. we dont want to leak the created_at timestamp)
-
         // Step 3: search DB for the associated email 
         const { data: rows, error } = await supabase
             .from("users")
-            .select("id, username, email, kdf, iterations, salt, cipher, iv, aes_key_length, gcm_iv_length, wrapped_master_key, version, two_fa_enabled")
+            .select("id, username, email, kdf, iterations, salt, cipher, iv, aes_key_length, gcm_iv_length, wrapped_master_key, version, two_fa_enabled, auth_hash_b64")
             .eq("email", email);
 
         if (error) {
@@ -114,8 +114,11 @@ export async function handleLogin(req: Request, res: Response) {
 
         const data = rows[0];
 
-        // otherwise email successfully found, reply with publicly known crypto metadata
-        return res.status(200).json(data);
+        // Don't send the stored auth hash to the client – only indicate whether one exists
+        const hasAuthHash = !!data.auth_hash_b64;
+        const { auth_hash_b64: _removed, ...publicData } = data;
+
+        return res.status(200).json({ ...publicData, hasAuthHash });
 
 
     } catch (e) {
@@ -123,6 +126,131 @@ export async function handleLogin(req: Request, res: Response) {
         return res.status(500).json({ error: "Internal server error"});
     }
 
+}
+
+/**
+ * POST /api/auth/session
+ * Client proves password knowledge by sending the auth hash.
+ * Server verifies it and issues a JWT.
+ * For existing users without an auth hash (migration), the first call stores it (TOFU).
+ */
+export async function createSession(req: Request, res: Response) {
+    try {
+        const { email, authHashB64 } = req.body;
+
+        if (!email || !authHashB64) {
+            return res.status(400).json({ error: "email and authHashB64 are required" });
+        }
+
+        const { data: rows, error } = await supabase
+            .from("users")
+            .select("id, email, auth_hash_b64")
+            .eq("email", email);
+
+        if (error) return res.status(400).json({ error: error.message });
+        if (!rows || rows.length === 0) return res.status(404).json({ error: "User not found" });
+
+        const user = rows[0];
+
+        if (user.auth_hash_b64) {
+            // Verify the auth hash matches (constant-time compare would be ideal,
+            // but since both sides are base64 of 256-bit PBKDF2 output this is acceptable)
+            if (user.auth_hash_b64 !== authHashB64) {
+                return res.status(401).json({ error: "Invalid credentials" });
+            }
+        } else {
+            // TOFU migration: store the auth hash for the first time
+            const { error: updateErr } = await supabase
+                .from("users")
+                .update({ auth_hash_b64: authHashB64 } as any)
+                .eq("id", user.id);
+
+            if (updateErr) {
+                return res.status(500).json({ error: "Failed to store auth hash" });
+            }
+        }
+
+        const token = signToken({ userId: user.id, email: user.email });
+        return res.status(200).json({ ok: true, token });
+    } catch (e) {
+        console.error("Session creation error:", e);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+/**
+ * PUT /api/auth/master-password
+ * Changes the master password by replacing the wrapping artifacts.
+ * Requires valid JWT. If 2FA is enabled, requires a valid 2FA code.
+ */
+export async function changeMasterPassword(req: Request, res: Response) {
+    try {
+        const userId = req.user?.userId;
+        const userEmail = req.user?.email;
+
+        if (!userId || !userEmail) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const {
+            newSaltB64,
+            newIvB64,
+            newWrappedMasterKeyB64,
+            newAuthHashB64,
+            newIterations,
+            twoFaCode,
+        } = req.body;
+
+        // Validate required fields
+        if (!newSaltB64 || !newIvB64 || !newWrappedMasterKeyB64 || !newAuthHashB64 || !newIterations) {
+            return res.status(400).json({ error: "Missing required password change fields" });
+        }
+
+        // Fetch user to check 2FA status
+        const { data: rows, error: fetchErr } = await supabase
+            .from("users")
+            .select("id, two_fa_enabled")
+            .eq("id", userId);
+
+        if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+        if (!rows || rows.length === 0) return res.status(404).json({ error: "User not found" });
+
+        const user = rows[0];
+
+        // If 2FA is enabled, require a valid code
+        if (user.two_fa_enabled) {
+            if (!twoFaCode) {
+                return res.status(400).json({ error: "2FA code is required", requires2fa: true });
+            }
+            const result = verify2faCode(userEmail, twoFaCode);
+            if (!result.ok) {
+                return res.status(401).json({ error: "Invalid 2FA code", requires2fa: true });
+            }
+        }
+
+        // Update the wrapping artifacts + auth hash
+        const { error: updateErr } = await supabase
+            .from("users")
+            .update({
+                salt: newSaltB64,
+                iv: newIvB64,
+                wrapped_master_key: newWrappedMasterKeyB64,
+                auth_hash_b64: newAuthHashB64,
+                iterations: newIterations,
+            } as any)
+            .eq("id", userId);
+
+        if (updateErr) {
+            return res.status(500).json({ error: "Failed to update password" });
+        }
+
+        // Issue a fresh token (old one remains valid until expiry, which is fine)
+        const token = signToken({ userId, email: userEmail });
+        return res.status(200).json({ ok: true, token });
+    } catch (e) {
+        console.error("Password change error:", e);
+        return res.status(500).json({ error: "Internal server error" });
+    }
 }
 
 export async function deleteAccount(req: Request, res: Response) {
