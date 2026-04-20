@@ -11,7 +11,9 @@ import NoteEdit, {
 	NOTE_IMAGE_FILE_INPUT_ID,
 	NOTE_INLINE_AUDIO_ID,
 	NOTE_INLINE_IMAGE_ID,
+	NOTE_INLINE_VIDEO_ID,
 	NOTE_TYPE_SELECT_ID,
+	NOTE_VIDEO_FILE_INPUT_ID,
 	SAVE_TO_CLIENT_BUTTON_ID,
 	SAVE_TO_SERVER_BUTTON_ID,
 } from "./NoteEdit";
@@ -102,6 +104,25 @@ describe("NoteEdit inline audio and image (view without downloading)", () => {
 			) as HTMLImageElement | null;
 			expect(img).not.toBeNull();
 			expect(img!.getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+		});
+	});
+
+	it("renders a video with a data URL src after attaching an MP4", async () => {
+		renderNoteEdit();
+		const fileInput = document.getElementById(
+			NOTE_VIDEO_FILE_INPUT_ID,
+		) as HTMLInputElement;
+		const file = new File([new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112])], "clip.mp4", {
+			type: "video/mp4",
+		});
+		fireEvent.change(fileInput, { target: { files: [file] } });
+
+		await waitFor(() => {
+			const video = document.getElementById(
+				NOTE_INLINE_VIDEO_ID,
+			) as HTMLVideoElement | null;
+			expect(video).not.toBeNull();
+			expect(video!.getAttribute("src")).toMatch(/^data:video\/mp4;base64,/);
 		});
 	});
 });
