@@ -10,6 +10,7 @@ import DeleteAll from "./DeleteAll";
 import Settings from "./Settings";
 import ChangeMasterPassword from "./ChangeMasterPassword";
 import PasswordMemorizer from "./PasswordMemorizer";
+import ImportNote from "./ImportNote";
 
 
 function PagesList() {
@@ -26,6 +27,7 @@ function PagesList() {
 				<Link to="/Settings"> (Settings)   </Link>
 				<Link to="/ChangeMasterPassword"> (ChangeMasterPassword)   </Link>
 				<Link to="/PasswordMemorizer"> (PasswordMemorizer)   </Link>
+				<Link to="/ImportNote"> (ImportNote)   </Link>
 			</div>
 		</div>
 	);
@@ -58,6 +60,9 @@ function Home() {
 			<button type="button" onClick={() => navigate("/PasswordMemorizer")}>
 				Password Memorizer
 			</button>
+			<button type="button" onClick={() => navigate("/ImportNote")}>
+				Import Note
+			</button>
 		</div>
 	);
 }
@@ -81,6 +86,7 @@ function App() {
 			<Route path="/Settings" element={<Settings />} />
 			<Route path="/ChangeMasterPassword" element={<ChangeMasterPassword />} />
 			<Route path="/PasswordMemorizer" element={<PasswordMemorizer />} />
+			<Route path="/ImportNote" element={<ImportNote />} />
 		</Routes>
 	</Router>
   )

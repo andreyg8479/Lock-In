@@ -18,7 +18,9 @@ import {
  } from "./SettingsMem";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { get2faStatus, send2fa, disable2fa, enable2fa } from "./api";
+import { get2faStatus, send2fa, disable2fa, enable2fa, requestLogin } from "./api";
+import { handleLogin } from "./crypto/lockinCrypto";
+import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
 import './Settings.css'
 
 export const THEME_SELECT_ID = "theme";
@@ -44,7 +46,8 @@ function Settings() {
 
 	const [twoFaEnabled, setTwoFaEnabled] = useState<boolean | null>(null);
 	const [twoFaLoading, setTwoFaLoading] = useState(false);
-	const [disableStep, setDisableStep] = useState<"idle" | "awaiting-code">("idle");
+	const [disableStep, setDisableStep] = useState<"idle" | "awaiting-password" | "awaiting-code">("idle");
+	const [disablePassword, setDisablePassword] = useState("");
 	const [disableCode, setDisableCode] = useState("");
 
 	useEffect(() => {
@@ -118,11 +121,55 @@ function Settings() {
 		}
 
 		if (disableStep === "idle") {
-			// Step 1: send a confirmation PIN
+			setDisableStep("awaiting-password");
+			return;
+		}
+
+		if (disableStep === "awaiting-password") {
+			if (!disablePassword) {
+				alert("Please enter your account password to continue.");
+				return;
+			}
+
+			// Step 1: verify password, then send a confirmation PIN
 			setTwoFaLoading(true);
 			try {
+				const response = await requestLogin({ email });
+				const requiredFields = [
+					"kdf", "iterations", "salt", "cipher", "iv",
+					"aes_key_length", "gcm_iv_length", "wrapped_master_key", "version"
+				];
+				const missing = requiredFields.filter((field) => !response[field]);
+				if (missing.length > 0) {
+					throw new Error(`User data corrupted (missing definitions for: ${missing.join(", ")}). Please sign up again.`);
+				}
+
+				const artifacts: SignupCryptoArtifacts = {
+					kdf: response.kdf,
+					kdfIterations: response.iterations,
+					saltB64: response.salt,
+					cipher: response.cipher,
+					ivB64: response.iv,
+					aesKeyLength: response.aes_key_length,
+					gcmIVLength: response.gcm_iv_length,
+					wrappedMasterKeyB64: response.wrapped_master_key,
+					v: response.version
+				};
+
+				const passwordCheck = await handleLogin({
+					email: response.email,
+					username: response.username,
+					attemptedPassword: disablePassword,
+					artifacts
+				});
+
+				if (!passwordCheck.ok) {
+					throw new Error(passwordCheck.payload.errorMessage);
+				}
+
 				await send2fa({ email });
 				setDisableStep("awaiting-code");
+				setDisablePassword("");
 				alert("A verification code has been sent to your email. Enter it below to confirm disabling 2FA.");
 			} catch (e: any) {
 				alert(e.message || "Failed to send verification code");
@@ -143,6 +190,7 @@ function Settings() {
 				await disable2fa({ email, code: disableCode });
 				setTwoFaEnabled(false);
 				setDisableStep("idle");
+				setDisablePassword("");
 				setDisableCode("");
 				alert("2FA successfully removed");
 			} catch (e: any) {
@@ -170,6 +218,7 @@ function Settings() {
 			await enable2fa({ email });
 			setTwoFaEnabled(true);
 			setDisableStep("idle");
+			setDisablePassword("");
 			setDisableCode("");
 			alert("2FA successfully added");
 		} catch (e: any) {
@@ -243,8 +292,17 @@ Theme:
 					Add 2FA
 				</button>
 				<button className="danger-button" onClick={remove2FA} disabled={twoFaLoading || twoFaEnabled === false}>
-					{disableStep === "awaiting-code" ? "Confirm Disable" : "Remove 2FA"}
+					{disableStep === "awaiting-password" ? "Verify Password" : disableStep === "awaiting-code" ? "Confirm Disable" : "Remove 2FA"}
 				</button>
+				{disableStep === "awaiting-password" && (
+					<input
+						type="password"
+						value={disablePassword}
+						onChange={(e) => setDisablePassword(e.target.value)}
+						placeholder="Enter account password"
+						className="auth-input"
+					/>
+				)}
 				{disableStep === "awaiting-code" && (
 					<input
 						type="text"
