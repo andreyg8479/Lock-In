@@ -70,6 +70,8 @@ function Home() {
 	if (diffDays >= getReminderTime()) {
 	
 		setLastHome(date2.toLocaleDateString());
+		
+		alert("Reminder to Change Your Password");
 	
 	}
 	
