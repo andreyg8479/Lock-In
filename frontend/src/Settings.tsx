@@ -48,7 +48,10 @@ function Settings() {
 	const [twoFaLoading, setTwoFaLoading] = useState(false);
 	const [disableStep, setDisableStep] = useState<"idle" | "awaiting-password" | "awaiting-code">("idle");
 	const [disablePassword, setDisablePassword] = useState("");
-	const [disableCode, setDisableCode] = useState("");
+	const [disableCode, setDisableCode] = useState
+	
+	
+	const [reminderDays, setReminderDays] = useState(0);
 
 	useEffect(() => {
 		if (email) {
@@ -313,6 +316,11 @@ Theme:
 						className="auth-input"
 					/>
 				)}
+			</div>
+			
+			<div className="reminder-row">
+Remind Me To Change My Password Every X Days (≤0 Will Not Remind You): 
+				<input type="number" value={reminderDays} onChange={(e) => setReminderDays(Number(e.target.value))}/>
 			</div>
 			
 		</div>
