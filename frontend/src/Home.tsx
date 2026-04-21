@@ -1,5 +1,10 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import {
+ setLastHome,
+ getLastHome,
+ getReminderTime
+ } from "./SettingsMem";
 
 import "./Home.css";
 
@@ -49,6 +54,25 @@ function Home() {
 			}
 		};
 	}, []);
+	
+	
+	//interval logic
+	
+	
+	const date1 = new Date(getLastHome());
+	const date2 = new Date();
+
+	const diffTime = Math.abs(date2 - date1);
+
+	//millisecons to days
+	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+	
+	if (diffDays >= getReminderTime()) {
+	
+		setLastHome(date2.toLocaleDateString());
+	
+	}
+	
 
 	return (
 		<div className="home-vault-page bg-background text-on-background min-h-screen selection:bg-primary-container selection:text-on-primary-container" data-route="home">
