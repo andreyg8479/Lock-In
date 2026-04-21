@@ -85,4 +85,26 @@ export function setCtrl(ctrl: boolean) {
 	localStorage.setItem('ctrl', ctrl.toString());
 }
 
+export function getLastHome() {
+	const lastHome = localStorage.getItem('lastHome');
+	return lastHome;
+}
+
+export function setLastHome(lastHome: string) {
+	localStorage.setItem('lastHome', lastHome.toString());
+}
+
+export function getReminderTime() {
+	const reminderTime = localStorage.getItem('reminderTime');
+	if (ctrl) {
+		return parseInt(reminderTime);
+	} else {
+		return 0;
+	}
+}
+
+export function setReminderTime(reminderTime: number) {
+	localStorage.setItem('reminderTime', reminderTime.toString());
+}
+
 //

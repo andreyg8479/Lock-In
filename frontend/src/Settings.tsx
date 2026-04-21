@@ -14,7 +14,10 @@ import {
  getShift,
  setShift,
  getCtrl,
- setCtrl
+ setCtrl,
+ setLastHome,
+ getReminderTime,
+ setReminderTime
  } from "./SettingsMem";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
@@ -51,7 +54,7 @@ function Settings() {
 	const [disableCode, setDisableCode] = useState
 	
 	
-	const [reminderDays, setReminderDays] = useState(0);
+	const [reminderDays, setReminderDays] = useState(getReminderTime());
 
 	useEffect(() => {
 		if (email) {
@@ -107,6 +110,8 @@ function Settings() {
 		setAlt(alt);
 		setShift(shift);
 		setCtrl(ctrl);
+		
+		getReminderTime(reminderDays);
 		
 		alert("Settings Updated Successfully");
 	
@@ -320,7 +325,10 @@ Theme:
 			
 			<div className="reminder-row">
 Remind Me To Change My Password Every X Days (≤0 Will Not Remind You): 
-				<input type="number" value={reminderDays} onChange={(e) => setReminderDays(Number(e.target.value))}/>
+				<input type="number" value={reminderDays} onChange={(e) => {
+				setReminderDays(Number(e.target.value)); 
+				setLastHome(new Date().toLocaleDateString());
+				}}/>
 			</div>
 			
 		</div>
