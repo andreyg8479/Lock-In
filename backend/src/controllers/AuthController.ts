@@ -62,7 +62,8 @@ export async function handleSignup(req: Request, res: Response) {
                 gcm_iv_length: artifacts.gcmIVLength,
                 iv: artifacts.ivB64,
                 version: artifacts.v,
-                auth_hash_b64: authHashB64 || null} as any // temporary fix to get TS to shut up
+                auth_hash_b64: authHashB64 || null,
+                two_fa_enabled: true} as any // temporary fix to get TS to shut up
             ]);
 
         // Something went wrong in the layer between here and DB
