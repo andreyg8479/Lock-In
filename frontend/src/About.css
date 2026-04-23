@@ -1,0 +1,48 @@
+.about-page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.top-bar-spacer {
+	width: 120px;
+	flex-shrink: 0;
+}
+
+.about-scroll {
+	flex: 1;
+	overflow: auto;
+	padding: 20px 24px 40px;
+	max-width: 52rem;
+}
+
+.about-lead {
+	font-size: 1.1rem;
+	line-height: 1.65;
+	margin: 0 0 1.5rem;
+	color: var(--color-text, inherit);
+}
+
+.about-section h2 {
+	font-size: 1.35rem;
+	margin: 0 0 0.75rem;
+}
+
+.about-list {
+	margin: 0;
+	padding-left: 1.25rem;
+	line-height: 1.6;
+}
+
+.about-list li {
+	margin-bottom: 0.9rem;
+}
+
+.about-list li strong {
+	font-weight: 600;
+}
+
+.about-list code {
+	font-size: 0.9em;
+}

@@ -11,6 +11,7 @@ import Settings from "./Settings";
 import ChangeMasterPassword from "./ChangeMasterPassword";
 import PasswordMemorizer from "./PasswordMemorizer";
 import ImportNote from "./ImportNote";
+import About from "./About";
 
 
 function PagesList() {
@@ -28,6 +29,7 @@ function PagesList() {
 				<Link to="/ChangeMasterPassword"> (ChangeMasterPassword)   </Link>
 				<Link to="/PasswordMemorizer"> (PasswordMemorizer)   </Link>
 				<Link to="/ImportNote"> (ImportNote)   </Link>
+				<Link to="/About"> (About)   </Link>
 			</div>
 		</div>
 	);
@@ -63,6 +65,9 @@ function Home() {
 			<button type="button" onClick={() => navigate("/ImportNote")}>
 				Import Note
 			</button>
+			<button type="button" onClick={() => navigate("/About")}>
+				About
+			</button>
 		</div>
 	);
 }
@@ -87,6 +92,7 @@ function App() {
 			<Route path="/ChangeMasterPassword" element={<ChangeMasterPassword />} />
 			<Route path="/PasswordMemorizer" element={<PasswordMemorizer />} />
 			<Route path="/ImportNote" element={<ImportNote />} />
+			<Route path="/About" element={<About />} />
 		</Routes>
 	</Router>
   )
