@@ -114,6 +114,38 @@ export async function updateNote(req: Request, res: Response) {
 
 }
 
+/**
+ * Sets second_password to null for a single note
+ */
+export async function clearNoteSecondPassword(req: Request, res: Response) {
+    const noteId = req.body.noteId ?? req.body.id;
+    const userId = req.body.user_id ?? req.body.userID;
+
+    if (!noteId || !userId) {
+        return res.status(400).json({ error: "noteId and user_id are required" });
+    }
+
+    const { data, error } = await supabase
+        .from("notes")
+        .update({
+            second_password: null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", noteId)
+        .eq("user_id", userId)
+        .select("id");
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+        return res.status(404).json({ error: "Note not found or not owned by this user" });
+    }
+
+    return res.status(200).json({ ok: true });
+}
+
 export async function deleteNote(req: Request, res: Response) {
 
     const { note_title, user_id } = req.body;

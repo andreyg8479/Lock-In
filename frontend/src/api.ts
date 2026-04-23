@@ -77,6 +77,13 @@ export async function updateNote(payload: Partial<EncryptedNote>) {
     return request("PUT", "/api/vault/file", payload);
 }
 
+export async function clearNoteSecondPassword(payload: {
+    noteId: string;
+    user_id: string;
+}) {
+    return request("POST", "/api/vault/clearNoteSecondPassword", payload);
+}
+
 export async function deleteNote(payload: any) {
     return request("DELETE", "/api/vault/file", payload);
 }

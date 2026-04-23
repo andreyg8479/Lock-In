@@ -21,7 +21,7 @@ const supabase = createClient(url, key);
 const PORT = process.env.PORT || 8080;
 
 import { handleSignup, handleLogin, deleteAccount, createSession, changeMasterPassword, sendPasswordChangeReminder } from "./controllers/AuthController";
-import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote } from "./controllers/VaultController";
+import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote, clearNoteSecondPassword } from "./controllers/VaultController";
 import { handleSend2fa, handleVerify2fa, handleGet2faStatus, handleEnable2fa, handleDisable2fa } from "./controllers/TwoFAController";
 import { requireAuth } from "./middleware/authMiddleware";
 
@@ -51,6 +51,7 @@ app.post("/api/vault/file", uploadNote);
 app.delete("/api/vault/file", deleteNote);
 app.put("/api/vault/file", updateNote);
 app.put("/api/vault/file/:noteId", updateNote);
+app.post("/api/vault/clearNoteSecondPassword", clearNoteSecondPassword);
 
 app.delete("/api/auth/account", deleteAccount);
 
