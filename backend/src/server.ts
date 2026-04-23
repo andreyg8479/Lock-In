@@ -20,7 +20,7 @@ const supabase = createClient(url, key);
 
 const PORT = process.env.PORT || 8080;
 
-import { handleSignup, handleLogin, deleteAccount, createSession, changeMasterPassword } from "./controllers/AuthController";
+import { handleSignup, handleLogin, deleteAccount, createSession, changeMasterPassword, sendPasswordChangeReminder } from "./controllers/AuthController";
 import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote } from "./controllers/VaultController";
 import { handleSend2fa, handleVerify2fa, handleGet2faStatus, handleEnable2fa, handleDisable2fa } from "./controllers/TwoFAController";
 import { requireAuth } from "./middleware/authMiddleware";
@@ -38,6 +38,7 @@ app.post("/api/auth/signup", handleSignup);
 app.post("/api/auth/login", handleLogin);
 app.post("/api/auth/session", createSession);
 app.put("/api/auth/master-password", requireAuth, changeMasterPassword);
+app.post("/api/auth/password-reminder/notify", requireAuth, sendPasswordChangeReminder);
 app.post("/api/auth/2fa/send", handleSend2fa);
 app.post("/api/auth/2fa/verify", handleVerify2fa);
 app.post("/api/auth/2fa/status", handleGet2faStatus);

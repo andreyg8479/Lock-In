@@ -66,6 +66,22 @@ export async function sendNewDeviceLoginEmail(
     });
 }
 
+
+export async function sendPasswordChangeReminderEmail(
+    email: string
+): Promise<{ ok: boolean; error?: string }> {
+    return sendEmail({
+        to: email,
+        subject: "Time to change your LockIn master password",
+        html:
+            `<p>Based on the password rotation reminder you configured in LockIn, it is time to ` +
+            `change your <strong>master password</strong>.</p>` +
+            `<p>Sign in to the app, open <strong>Change Master Password</strong>, and set a new password. ` +
+            `Regular rotation helps protect your vault if a password is ever exposed.</p>` +
+            `<p>If you have already changed your password since this message was sent, you can ignore it.</p>`
+    });
+}
+
 const TWO_FA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const TWO_FA_LENGTH = 6;
 const CODE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes

@@ -95,12 +95,12 @@ export function setLastHome(lastHome: string) {
 }
 
 export function getReminderTime() {
-	const reminderTime = localStorage.getItem('reminderTime');
-	if (ctrl) {
-		return parseInt(reminderTime);
-	} else {
-		return 0;
+	const reminderTime = localStorage.getItem("reminderTime");
+	if (reminderTime != null && reminderTime !== "") {
+		const n = parseInt(reminderTime, 10);
+		return Number.isNaN(n) ? 0 : n;
 	}
+	return 0;
 }
 
 export function setReminderTime(reminderTime: number) {

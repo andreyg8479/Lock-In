@@ -124,3 +124,9 @@ export async function changeMasterPasswordApi(
 ): Promise<{ ok: boolean; token: string; requires2fa?: boolean }> {
     return request("PUT", "/api/auth/master-password", payload, token);
 }
+
+
+export async function notifyPasswordChangeReminder(token: string): Promise<{ ok: boolean }> {
+    return request("POST", "/api/auth/password-reminder/notify", {}, token);
+  }
+  

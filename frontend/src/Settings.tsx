@@ -51,9 +51,8 @@ function Settings() {
 	const [twoFaLoading, setTwoFaLoading] = useState(false);
 	const [disableStep, setDisableStep] = useState<"idle" | "awaiting-password" | "awaiting-code">("idle");
 	const [disablePassword, setDisablePassword] = useState("");
-	const [disableCode, setDisableCode] = useState
-	
-	
+	const [disableCode, setDisableCode] = useState("");
+
 	const [reminderDays, setReminderDays] = useState(getReminderTime());
 
 	useEffect(() => {
@@ -111,7 +110,7 @@ function Settings() {
 		setShift(shift);
 		setCtrl(ctrl);
 		
-		getReminderTime(reminderDays);
+		setReminderTime(reminderDays);
 		
 		alert("Settings Updated Successfully");
 	

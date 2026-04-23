@@ -8,7 +8,7 @@ jest.mock("resend", () => ({
   })),
 }));
 
-const { sendNewDeviceLoginEmail } = require("../src/email/emailService");
+const { sendNewDeviceLoginEmail, sendPasswordChangeReminderEmail } = require("../src/email/emailService");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -30,6 +30,22 @@ test("sends a new-device login notification email", async () => {
       to: "user@example.com",
       subject: "New sign-in to your LockIn account",
       html: expect.stringContaining("Chrome on Windows"),
+    })
+  );
+});
+
+test("sends a master password rotation reminder email", async () => {
+  mockSend.mockResolvedValue({ error: null });
+
+  const result = await sendPasswordChangeReminderEmail("user@example.com");
+
+  expect(result).toEqual({ ok: true });
+  expect(mockSend).toHaveBeenCalledTimes(1);
+  expect(mockSend).toHaveBeenCalledWith(
+    expect.objectContaining({
+      to: "user@example.com",
+      subject: "Time to change your LockIn master password",
+      html: expect.stringContaining("master password"),
     })
   );
 });

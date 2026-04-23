@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "./AuthContext";
+import { notifyPasswordChangeReminder } from "./api";
 import {
  setLastHome,
  getLastHome,
@@ -30,6 +32,7 @@ function mobileTabClass(active: boolean): string {
  */
 function Home() {
 	const { pathname } = useLocation();
+	const { email, token } = useAuth();
 
 	useEffect(() => {
 		document.documentElement.classList.add("dark");
@@ -54,27 +57,42 @@ function Home() {
 			}
 		};
 	}, []);
-	
-	
-	//interval logic
-	
-	
-	const date1 = new Date(getLastHome());
-	const date2 = new Date();
 
-	const diffTime = Math.abs(date2 - date1);
+	// Master password rotation: localStorage interval; email via Resend when due (requires session).
+	useEffect(() => {
+		const threshold = getReminderTime();
+		if (threshold <= 0) return;
+		if (!email || !token) return;
 
-	//millisecons to days
-	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-	
-	if (diffDays >= getReminderTime()) {
-	
-		setLastHome(date2.toLocaleDateString());
-		
-		alert("Reminder to Change Your Password");
-	
-	}
-	
+		const lastStr = getLastHome();
+		const today = new Date().toLocaleDateString();
+		if (!lastStr) {
+			setLastHome(today);
+			return;
+		}
+
+		const date1 = new Date(lastStr);
+		const date2 = new Date();
+		if (Number.isNaN(date1.getTime())) {
+			setLastHome(today);
+			return;
+		}
+
+		const diffTime = Math.abs(date2.getTime() - date1.getTime());
+		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+		if (diffDays < threshold) return;
+
+		setLastHome(today);
+		void (async () => {
+			try {
+				await notifyPasswordChangeReminder(token);
+			} catch (e) {
+				console.error("Password reminder email failed:", e);
+			}
+			alert("Reminder to Change Your Password");
+		})();
+	}, [email, token]);
 
 	return (
 		<div className="home-vault-page bg-background text-on-background min-h-screen selection:bg-primary-container selection:text-on-primary-container" data-route="home">

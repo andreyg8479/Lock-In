@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../supabaseClient";
 import { Request, Response } from "express";
 import { signToken } from "../utils/jwt";
-import { verify2faCode } from "../email/emailService";
+import { verify2faCode, sendPasswordChangeReminderEmail } from "../email/emailService";
 
 /*
 
@@ -251,6 +251,21 @@ export async function changeMasterPassword(req: Request, res: Response) {
         console.error("Password change error:", e);
         return res.status(500).json({ error: "Internal server error" });
     }
+}
+
+/**
+ * Sends a Resend email to the signed-in user when their client-side rotation interval is due.
+ */
+export async function sendPasswordChangeReminder(req: Request, res: Response) {
+    const userEmail = req.user?.email;
+    if (!userEmail) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    const result = await sendPasswordChangeReminderEmail(userEmail);
+    if (!result.ok) {
+        return res.status(500).json({ error: result.error || "Failed to send reminder email" });
+    }
+    return res.status(200).json({ ok: true });
 }
 
 export async function deleteAccount(req: Request, res: Response) {
