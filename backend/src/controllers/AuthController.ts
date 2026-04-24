@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient";
 import { Request, Response } from "express";
 import { signToken } from "../utils/jwt";
 import { verify2faCode, sendPasswordChangeReminderEmail } from "../email/emailService";
+import { recordDeviceAndMaybeNotify } from "../devices/deviceTracker";
 
 /**
  * Returns true for Postgres/PostgREST errors raised when we reference a
@@ -263,6 +264,13 @@ export async function createSession(req: Request, res: Response) {
         }
 
         const token = signToken({ userId: user.id, email: user.email });
+
+        // Fire-and-forget: record this device and email the user if it's the
+        // first time we've seen this fingerprint. Errors must not block login.
+        void recordDeviceAndMaybeNotify({ userId: user.id, email: user.email, req }).catch(
+            (e) => console.warn("device tracker failed:", e)
+        );
+
         return res.status(200).json({ ok: true, token });
     } catch (e) {
         console.error("Session creation error:", e);
