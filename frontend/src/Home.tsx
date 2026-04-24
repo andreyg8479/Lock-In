@@ -2,11 +2,6 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { notifyPasswordChangeReminder } from "./api";
-import {
- setLoginCount,
- getLoginCount,
- getReminderTime
- } from "./SettingsMem";
 
 import "./Home.css";
 
@@ -26,6 +21,7 @@ function mobileTabClass(active: boolean): string {
 	return `flex flex-col items-center ${active ? "text-[#bbc3ff]" : "text-[#434656]"}`;
 }
 
+
 /**
  * Port of `frontend2/homepage` — structure and Tailwind classes preserved for identical aesthetic.
  * Anchor tags are React Router `Link` components to the same paths.
@@ -33,8 +29,13 @@ function mobileTabClass(active: boolean): string {
 function Home() {
 	const { pathname } = useLocation();
 	const { email, token } = useAuth();
+	
+	
 
 	useEffect(() => {
+	
+	
+	
 		document.documentElement.classList.add("dark");
 
 		const prevBodyClass = document.body.className;
@@ -47,6 +48,7 @@ function Home() {
 		document.body.style.placeItems = "normal";
 
 		return () => {
+
 			document.documentElement.classList.remove("dark");
 			document.body.className = prevBodyClass;
 			document.body.style.display = prevBodyDisplay;
@@ -58,31 +60,6 @@ function Home() {
 		};
 	}, []);
 
-	// Master password rotation: localStorage interval; email via Resend when due (requires session).
-	useEffect(() => {
-		const threshold = getReminderTime();
-		if (threshold <= 0) return;
-		if (!email || !token) return;
-
-		const loginCount = getLoginCount();
-		
-		loginCount++;
-		setLoginCount(loginCount);
-
-
-
-		if (loginCount < threshold) return;
-
-		setLastHome(today);
-		void (async () => {
-			try {
-				await notifyPasswordChangeReminder(token);
-			} catch (e) {
-				console.error("Password reminder email failed:", e);
-			}
-			alert("Reminder to Change Your Password");
-		})();
-	}, [email, token]);
 
 	return (
 		<div className="home-vault-page bg-background text-on-background min-h-screen selection:bg-primary-container selection:text-on-primary-container" data-route="home">

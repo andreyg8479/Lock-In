@@ -15,7 +15,6 @@ import {
  setShift,
  getCtrl,
  setCtrl,
- setLastHome,
  getReminderTime,
  setReminderTime
  } from "./SettingsMem";
@@ -98,6 +97,7 @@ function Settings() {
 		
 		if (reminderDays < 0) {
 			alert("The ammount of times opended for a reminder cannot be negative. To not recieve reminders, set it to 0");
+			return;
 		}
 		
 		
@@ -330,7 +330,6 @@ Theme:
 Remind me to change my password every X logins (0 Will Not Remind You): 
 				<input type="number" value={reminderDays} onChange={(e) => {
 				setReminderDays(Number(e.target.value)); 
-				setLastHome(new Date().toLocaleDateString());
 				}}/>
 			</div>
 			
