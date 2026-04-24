@@ -85,13 +85,17 @@ export function setCtrl(ctrl: boolean) {
 	localStorage.setItem('ctrl', ctrl.toString());
 }
 
-export function getLastHome() {
-	const lastHome = localStorage.getItem('lastHome');
-	return lastHome;
+export function getLoginCount() {
+	const loginCount = localStorage.getItem("loginCount");
+	if (loginCount != null && loginCount !== "") {
+		const n = parseInt(loginCount, 10);
+		return Number.isNaN(n) ? 0 : n;
+	}
+	return 0;
 }
 
-export function setLastHome(lastHome: string) {
-	localStorage.setItem('lastHome', lastHome.toString());
+export function setLoginCount(loginCount: number) {
+	localStorage.setItem('loginCount', loginCount.toString());
 }
 
 export function getReminderTime() {

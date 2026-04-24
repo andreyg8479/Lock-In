@@ -3,8 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { notifyPasswordChangeReminder } from "./api";
 import {
- setLastHome,
- getLastHome,
+ setLoginCount,
+ getLoginCount,
  getReminderTime
  } from "./SettingsMem";
 
@@ -64,24 +64,14 @@ function Home() {
 		if (threshold <= 0) return;
 		if (!email || !token) return;
 
-		const lastStr = getLastHome();
-		const today = new Date().toLocaleDateString();
-		if (!lastStr) {
-			setLastHome(today);
-			return;
-		}
+		const loginCount = getLoginCount();
+		
+		loginCount++;
+		setLoginCount(loginCount);
 
-		const date1 = new Date(lastStr);
-		const date2 = new Date();
-		if (Number.isNaN(date1.getTime())) {
-			setLastHome(today);
-			return;
-		}
 
-		const diffTime = Math.abs(date2.getTime() - date1.getTime());
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-		if (diffDays < threshold) return;
+		if (loginCount < threshold) return;
 
 		setLastHome(today);
 		void (async () => {
