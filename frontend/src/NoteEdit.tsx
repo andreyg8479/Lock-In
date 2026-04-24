@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from "./AuthContext";
 import {  useRef} from 'react'
 import { useLocation, useNavigate } from "react-router-dom";
-import { getNote, uploadNote, updateNote, deleteNote } from "./api";
-import { encryptNote, decryptNote, encryptSecondPassword } from "./crypto/lockinCrypto";
+import { getNote, uploadNote, updateNote, deleteNote, clearNoteSecondPassword } from "./api";
+import { encryptNote, decryptNote, encryptSecondPassword, verifySecondPassword } from "./crypto/lockinCrypto";
 import { saveNoteClient, getNoteClient } from "./client_storage";
 import type { EncryptedNote, DecryptedNote, NoteType } from "../../shared_types/note_types";
 import ShareNoteDialog from "./ShareNoteDialog";
@@ -364,25 +364,44 @@ function NoteEdit() {
 		
 		if (extraPassword) {
 			
-			const checkPass = prompt("Please insert the current extra password to remove it");
-			
-			const curPass = ""; //TODO, get the current extra password from the database
-			
-			if (checkPass == curPass) {
-			
-				//TODO, remove extra password from database here
-			
+			if (!vaultKey) {
+				alert("Encryption key not available. Please log in again.");
+				return;
+			}
+			if (!secondPasswordB64) {
+				// Local state says a password is set but we have no ciphertext
+				// to verify against. Clear the flag so the UI is not stuck.
 				setExtraPassword(false);
-				alert("Extra Password Removed");
-			
-			} else {
-			
+				return;
+			}
+
+			const checkPass = prompt("Please insert the current extra password to remove it");
+			if (checkPass === null) return; // user cancelled
+
+			const verified = await verifySecondPassword(checkPass, secondPasswordB64, vaultKey);
+			if (!verified) {
 				alert("Failed: Password was incorrect");
 				return;
-				
 			}
-			
-			
+
+			// Persist removal server-side if the note lives on the server.
+			// Client-only notes just update local state; the user's next
+			// "Save to Client" will persist the cleared value.
+			if (existsOnServer && noteId && userId) {
+				try {
+					await clearNoteSecondPassword({ noteId, user_id: userId });
+				} catch (e) {
+					console.error("Failed to clear second password on server:", e);
+					alert(
+						`Failed to remove the extra password on the server.\n\n${e instanceof Error ? e.message : String(e)}`,
+					);
+					return;
+				}
+			}
+
+			setSecondPasswordB64(null);
+			setExtraPassword(false);
+			alert("Extra Password Removed");
 			
 		} else {
 			const extraPass = prompt("Please enter the new extra password. (THIS CANNOT BE CHANGED)");
