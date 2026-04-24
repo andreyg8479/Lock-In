@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { getShare, uploadNote } from "./api";
-import { openShareBundle, encryptNote } from "./crypto/lockinCrypto";
+import { getAllNoteNames, getShare, uploadNote } from "./api";
+import { getAllNotesClient } from "./client_storage";
+import { decryptFilenames, openShareBundle, encryptNote } from "./crypto/lockinCrypto";
 import type { DecryptedNote } from "../../shared_types/note_types";
 import "./SharedNoteView.css";
 
@@ -33,6 +34,39 @@ export default function SharedNoteView() {
 	const [decrypted, setDecrypted] = useState<DecryptedShare | null>(null);
 	const [meta, setMeta] = useState<ShareMeta | null>(null);
 	const [importing, setImporting] = useState(false);
+
+	const getExistingNoteNameSet = async (): Promise<Set<string>> => {
+		if (!userId || !vaultKey) return new Set();
+		const encryptedNames: string[] = [];
+
+		try {
+			const serverResponse = await getAllNoteNames({ userID: userId });
+			if (Array.isArray(serverResponse?.notes)) {
+				for (const note of serverResponse.notes) {
+					if (typeof note?.note_title === "string") {
+						encryptedNames.push(note.note_title);
+					}
+				}
+			}
+		} catch (e) {
+			console.warn("Failed to check server note names before import:", e);
+		}
+
+		try {
+			const clientNotes = await getAllNotesClient();
+			for (const note of clientNotes) {
+				if (note.user_id === userId && typeof note.note_title === "string") {
+					encryptedNames.push(note.note_title);
+				}
+			}
+		} catch (e) {
+			console.warn("Failed to check client note names before import:", e);
+		}
+
+		if (encryptedNames.length === 0) return new Set();
+		const decryptedNames = await decryptFilenames(encryptedNames, vaultKey);
+		return new Set(decryptedNames.map((name) => name.trim().toLowerCase()).filter(Boolean));
+	};
 
 	useEffect(() => {
 		if (!id) return;
@@ -82,11 +116,36 @@ export default function SharedNoteView() {
 		if (!decrypted || !userId || !vaultKey) return;
 		setImporting(true);
 		try {
+			const defaultTitle = `[Shared] ${decrypted.note_title}`;
+			let finalTitle = defaultTitle;
+			const existingNames = await getExistingNoteNameSet();
+
+			if (existingNames.has(defaultTitle.trim().toLowerCase())) {
+				while (true) {
+					const renamed = prompt(
+						`A note named "${defaultTitle}" already exists.\nEnter a new name for this imported note:`,
+						finalTitle
+					);
+					if (renamed === null) return;
+					const candidate = renamed.trim();
+					if (!candidate) {
+						alert("Note name cannot be empty.");
+						continue;
+					}
+					if (existingNames.has(candidate.toLowerCase())) {
+						alert("That note name already exists. Please choose another.");
+						continue;
+					}
+					finalTitle = candidate;
+					break;
+				}
+			}
+
 			const now = new Date().toISOString();
 			const note: DecryptedNote = {
 				user_id: userId,
 				id: "",
-				note_title: `[Shared] ${decrypted.note_title}`,
+				note_title: finalTitle,
 				note_text: decrypted.note_text,
 				iv_b64: "",
 				pinned: false,
