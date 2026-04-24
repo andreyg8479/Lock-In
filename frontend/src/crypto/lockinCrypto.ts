@@ -80,10 +80,118 @@ const SALT_LEN = 16; // bytes
 const IV_LEN = 12; // bytes (96 bits) for AES-GCM
 const MASTER_KEY_LEN = 32; // bytes for AES-256 (256 bits)
 
-// RSA-OAEP constants for E2EE note sharing (not yet used in any functions)
+// RSA-OAEP constants for E2EE note sharing.
 export const RSA_KEY_LENGTH = 2048;
 export const RSA_HASH = "SHA-256";
 export const RSA_ALGORITHM = "RSA-OAEP";
+const RSA_PUBLIC_EXPONENT = new Uint8Array([0x01, 0x00, 0x01]); // 65537
+
+// ---------------------------------------------------------------------------
+// RSA-OAEP key-pair helpers (E2EE note sharing)
+// ---------------------------------------------------------------------------
+
+/** Generate a fresh RSA-OAEP key pair. Private key is extractable so we can
+ *  wrap it under the user's vault key; public key is extractable so we can
+ *  upload it as SPKI base64. */
+export async function generateRsaKeyPair(): Promise<CryptoKeyPair> {
+    return crypto.subtle.generateKey(
+        {
+            name: RSA_ALGORITHM,
+            modulusLength: RSA_KEY_LENGTH,
+            publicExponent: RSA_PUBLIC_EXPONENT,
+            hash: RSA_HASH,
+        },
+        true,
+        ["encrypt", "decrypt"]
+    ) as Promise<CryptoKeyPair>;
+}
+
+/** Export a public key to SPKI base64 for storage or transmission. */
+export async function exportPublicKeyB64(pub: CryptoKey): Promise<string> {
+    const spki = await crypto.subtle.exportKey("spki", pub);
+    return toBase64(new Uint8Array(spki));
+}
+
+/** Import a public key from SPKI base64 (e.g. a recipient's published key). */
+export async function importPublicKeyB64(b64: string): Promise<CryptoKey> {
+    return crypto.subtle.importKey(
+        "spki",
+        toArrayBuffer(fromBase64(b64)),
+        { name: RSA_ALGORITHM, hash: RSA_HASH },
+        false,
+        ["encrypt"]
+    );
+}
+
+/** Export the private key as PKCS8, then AES-GCM-encrypt it with the vault
+ *  key so the server never sees it. Returns base64 ciphertext + IV. */
+export async function wrapPrivateKeyWithVaultKey(
+    priv: CryptoKey,
+    vaultKey: CryptoKey
+): Promise<{ encryptedPrivateKeyB64: string; ivB64: string }> {
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", priv);
+    const iv = randomBytes(IV_LEN);
+    const ct = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        vaultKey,
+        pkcs8
+    );
+    return {
+        encryptedPrivateKeyB64: toBase64(new Uint8Array(ct)),
+        ivB64: toBase64(iv),
+    };
+}
+
+/** Inverse of `wrapPrivateKeyWithVaultKey` — AES-GCM decrypt PKCS8 with the
+ *  vault key and import as a non-extractable RSA-OAEP private key. */
+export async function unwrapPrivateKeyWithVaultKey(
+    encryptedPrivateKeyB64: string,
+    ivB64: string,
+    vaultKey: CryptoKey
+): Promise<CryptoKey> {
+    const ct = fromBase64(encryptedPrivateKeyB64);
+    const iv = fromBase64(ivB64);
+    const pkcs8 = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        vaultKey,
+        toArrayBuffer(ct)
+    );
+    return crypto.subtle.importKey(
+        "pkcs8",
+        pkcs8,
+        { name: RSA_ALGORITHM, hash: RSA_HASH },
+        false,
+        ["decrypt"]
+    );
+}
+
+/** RSA-OAEP encrypt raw key bytes to a recipient's public key. Used to seal
+ *  a freshly-generated per-share AES key for one recipient. */
+export async function rsaEncryptToPublicKey(
+    plaintext: Uint8Array,
+    publicKey: CryptoKey
+): Promise<string> {
+    const ct = await crypto.subtle.encrypt(
+        { name: RSA_ALGORITHM },
+        publicKey,
+        toArrayBuffer(plaintext)
+    );
+    return toBase64(new Uint8Array(ct));
+}
+
+/** RSA-OAEP decrypt with our private key. Returns raw bytes (caller imports
+ *  them as an AES-GCM key if that's what's inside). */
+export async function rsaDecryptWithPrivateKey(
+    ciphertextB64: string,
+    privateKey: CryptoKey
+): Promise<Uint8Array> {
+    const pt = await crypto.subtle.decrypt(
+        { name: RSA_ALGORITHM },
+        privateKey,
+        toArrayBuffer(fromBase64(ciphertextB64))
+    );
+    return new Uint8Array(pt);
+}
 
 // Generate the crypto metadata to be associated with this account
 export async function generateSignupCredentials(data: IncomingSignupData): Promise<OutgoingSignupData> {
@@ -113,6 +221,19 @@ export async function generateSignupCredentials(data: IncomingSignupData): Promi
         // Step 4: Derive auth hash for server-side password verification
         const authHashB64 = await deriveAuthHash(data.password, salt, PDKDF2_ITERATIONS);
 
+        // Step 5: Generate RSA-OAEP key pair and wrap the private key with the
+        // vault key so it can be stored server-side without exposing it.
+        const vaultCryptoKey = await crypto.subtle.importKey(
+            "raw",
+            toArrayBuffer(vaultKey),
+            "AES-GCM",
+            false,
+            ["encrypt", "decrypt"]
+        );
+        const rsaPair = await generateRsaKeyPair();
+        const publicKeyB64 = await exportPublicKeyB64(rsaPair.publicKey);
+        const wrappedPriv = await wrapPrivateKeyWithVaultKey(rsaPair.privateKey, vaultCryptoKey);
+
         return {
             ok: true,
             payload: {
@@ -128,7 +249,13 @@ export async function generateSignupCredentials(data: IncomingSignupData): Promi
                     aesKeyLength: MASTER_KEY_LEN * 8, // bits
                     gcmIVLength: IV_LEN,
                     wrappedMasterKeyB64: toBase64(new Uint8Array(wrapped)), // convert to B64
-                    v: 1
+                    v: 1,
+                    public_key_spki_b64: publicKeyB64,
+                    encrypted_private_key_b64: wrappedPriv.encryptedPrivateKeyB64,
+                    private_key_iv_b64: wrappedPriv.ivB64,
+                    asymmetric_key_algorithm: "RSA-OAEP",
+                    asymmetric_key_length: RSA_KEY_LENGTH,
+                    asymmetric_hash: "SHA-256",
                 }
             },
         };
@@ -597,4 +724,163 @@ export function fromBase64(b64: string): Uint8Array {
         bytes[i] = binary.charCodeAt(i);
     }
     return bytes;
+}
+
+// ---------------------------------------------------------------------------
+// Share bundle (E2EE note sharing — frozen snapshot)
+// ---------------------------------------------------------------------------
+// A share bundle is a note re-encrypted with a fresh per-share AES-256 key.
+// That share key is then RSA-OAEP-encrypted to the recipient's public key so
+// only they can unwrap it. The server never sees the share key in the clear.
+// We reuse the same title-packing convention as `encryptNote`/`decryptNote`
+// (IV prefix + ciphertext, base64) for the title field.
+
+export type ShareBundle = {
+    note_title: string;
+    note_text: string;
+    iv_text_b64: string;
+    encrypted_share_key_b64: string;
+    note_type: 'text' | 'audio' | 'image' | 'video';
+};
+
+/** Build a share bundle from a decrypted note. `recipientPublicKey` must be
+ *  the recipient's RSA-OAEP public key (previously imported via
+ *  `importPublicKeyB64`). The same `AUDIO_PAYLOAD_V1` JSON packing is used
+ *  for audio-with-transcript so the viewer can decrypt identically. */
+export async function createShareBundle(
+    note: DecryptedNote,
+    recipientPublicKey: CryptoKey
+): Promise<ShareBundle> {
+    // Fresh random per-share AES-256 key (extractable so we can RSA-wrap raw bytes)
+    const rawShareKey = randomBytes(MASTER_KEY_LEN);
+    const shareKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(rawShareKey),
+        "AES-GCM",
+        false,
+        ["encrypt"]
+    );
+
+    // Encrypt note text (or audio+transcript v1 JSON, or raw media bytes)
+    const textIv = randomBytes(IV_LEN);
+    const contentBuffer =
+        note.note_type === 'text'
+            ? utf8Bytes(note.note_text)
+            : isAudioWithTranscript(note)
+            ? utf8Bytes(JSON.stringify({
+                v: AUDIO_PAYLOAD_V1,
+                a: note.note_text,
+                t: note.note_transcript,
+              }))
+            : fromBase64(note.note_text);
+
+    const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(textIv) },
+        shareKey,
+        toArrayBuffer(contentBuffer)
+    );
+
+    // Encrypt title with its own IV, packed like existing notes
+    const titleIv = randomBytes(IV_LEN);
+    const titleBuffer = utf8Bytes(note.note_title);
+    const encryptedTitle = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(titleIv) },
+        shareKey,
+        toArrayBuffer(titleBuffer)
+    );
+    const packedTitle = new Uint8Array(titleIv.length + encryptedTitle.byteLength);
+    packedTitle.set(titleIv);
+    packedTitle.set(new Uint8Array(encryptedTitle), titleIv.length);
+
+    // Seal the share key to the recipient's public key
+    const encryptedShareKeyB64 = await rsaEncryptToPublicKey(rawShareKey, recipientPublicKey);
+
+    return {
+        note_title: toBase64(packedTitle),
+        note_text: toBase64(new Uint8Array(ciphertext)),
+        iv_text_b64: toBase64(textIv),
+        encrypted_share_key_b64: encryptedShareKeyB64,
+        note_type: note.note_type,
+    };
+}
+
+export type DecryptedShare = {
+    note_title: string;
+    note_text: string;
+    note_transcript?: string;
+    note_type: 'text' | 'audio' | 'image' | 'video';
+};
+
+/** Open a share bundle fetched from the server using our RSA private key. */
+export async function openShareBundle(
+    row: {
+        note_title: string;
+        note_text: string;
+        iv_text_b64: string;
+        encrypted_share_key_b64: string;
+        note_type: 'text' | 'audio' | 'image' | 'video';
+    },
+    myRsaPrivateKey: CryptoKey
+): Promise<DecryptedShare> {
+    // Unwrap the per-share AES key
+    const rawShareKey = await rsaDecryptWithPrivateKey(row.encrypted_share_key_b64, myRsaPrivateKey);
+    const shareKey = await crypto.subtle.importKey(
+        "raw",
+        toArrayBuffer(rawShareKey),
+        "AES-GCM",
+        false,
+        ["decrypt"]
+    );
+
+    // Decrypt title (packed iv+ct)
+    const packedTitle = fromBase64(row.note_title);
+    const titleIv = packedTitle.slice(0, IV_LEN);
+    const titleCt = packedTitle.slice(IV_LEN);
+    const titleBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(titleIv) },
+        shareKey,
+        toArrayBuffer(titleCt)
+    );
+    const title = new TextDecoder().decode(titleBuf);
+
+    // Decrypt text
+    const textIv = fromBase64(row.iv_text_b64);
+    const textCt = fromBase64(row.note_text);
+    const textBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(textIv) },
+        shareKey,
+        toArrayBuffer(textCt)
+    );
+
+    let noteText: string;
+    let noteTranscript: string | undefined;
+    if (row.note_type === 'text') {
+        noteText = new TextDecoder().decode(textBuf);
+    } else if (row.note_type === 'audio') {
+        const bytes = new Uint8Array(textBuf);
+        if (bytes.length > 0 && bytes[0] === 0x7b) {
+            try {
+                const obj = JSON.parse(new TextDecoder().decode(bytes)) as { v?: number; a?: string; t?: string };
+                if (obj && obj.v === AUDIO_PAYLOAD_V1 && typeof obj.a === "string") {
+                    noteText = obj.a;
+                    noteTranscript = typeof obj.t === "string" ? obj.t : undefined;
+                } else {
+                    noteText = toBase64(bytes);
+                }
+            } catch {
+                noteText = toBase64(bytes);
+            }
+        } else {
+            noteText = toBase64(bytes);
+        }
+    } else {
+        noteText = toBase64(new Uint8Array(textBuf));
+    }
+
+    return {
+        note_title: title,
+        note_text: noteText,
+        ...(noteTranscript !== undefined ? { note_transcript: noteTranscript } : {}),
+        note_type: row.note_type,
+    };
 }

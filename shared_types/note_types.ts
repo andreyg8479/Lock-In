@@ -66,41 +66,38 @@ export type UserPublicInfo = {
 
 /** A note encrypted with a per-share AES key (NOT the owner's vault key).
  *  The note content is a frozen snapshot taken at the time of sharing.
+ *  Sharing is single-recipient — to share with multiple people, the owner
+ *  creates multiple rows.
  *
- *  Planned DB table: `shared_notes`
- *    id              uuid  PK
- *    owner_id        uuid  FK → users.id
- *    note_title      text  — encrypted with per-share AES key, base64
- *    note_text       text  — encrypted with per-share AES key, base64
- *    iv_title_b64    text  — IV for title encryption
- *    iv_text_b64     text  — IV for text encryption
- *    note_type       text  — 'text' | 'audio' | 'image' | 'video'
- *    created_at      timestamptz
- *    updated_at      timestamptz
+ *  DB table: `shared_notes`
+ *    id                      uuid  PK
+ *    owner_id                uuid  FK → users.id
+ *    recipient_id            uuid  FK → users.id
+ *    source_note_id          uuid  nullable — informational only (no cascade)
+ *    note_title              text  — packed iv+ciphertext, base64 (same convention as notes.note_title)
+ *    note_text               text  — ciphertext base64, encrypted with per-share AES key
+ *    iv_text_b64             text  — IV for note_text
+ *    note_type               text
+ *    encrypted_share_key_b64 text  — per-share AES key, RSA-OAEP-encrypted to recipient public key
+ *    expires_at              timestamptz nullable
+ *    created_at              timestamptz
  */
 export type SharedNote = {
     id: string;
     owner_id: string;
+    recipient_id: string;
+    source_note_id: string | null;
     note_title: string;
     note_text: string;
-    iv_title_b64: string;
     iv_text_b64: string;
     note_type: NoteType;
+    encrypted_share_key_b64: string;
+    expires_at: string | null;
     created_at: string;
-    updated_at: string;
 };
 
-/** Per-recipient entry: holds the per-share AES key encrypted with the
- *  recipient's RSA-OAEP public key.
- *
- *  Planned DB table: `shared_note_recipients`
- *    id                       uuid  PK
- *    shared_note_id           uuid  FK → shared_notes.id
- *    recipient_id             uuid  FK → users.id
- *    encrypted_share_key_b64  text  — per-share AES key encrypted with recipient's public key
- *    permission               text  — 'read' | 'read-write'
- *    shared_at                timestamptz
- */
+/** @deprecated Not used — sharing collapsed into a single `shared_notes`
+ *  table per the implemented design. Kept for reference only. */
 export type SharedNoteRecipient = {
     id: string;
     shared_note_id: string;

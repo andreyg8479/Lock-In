@@ -1,12 +1,22 @@
 import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "./Login.css";
 
 import { useAuth } from "./AuthContext";
 
 import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
-import { handleLogin, deriveAuthHash, fromBase64 } from "./crypto/lockinCrypto";
-import { requestLogin, send2fa, verify2fa, createSession } from "./api";
+import {
+	handleLogin,
+	deriveAuthHash,
+	fromBase64,
+	generateRsaKeyPair,
+	exportPublicKeyB64,
+	wrapPrivateKeyWithVaultKey,
+	unwrapPrivateKeyWithVaultKey,
+	importPublicKeyB64,
+	RSA_KEY_LENGTH,
+} from "./crypto/lockinCrypto";
+import { requestLogin, send2fa, verify2fa, createSession, uploadKeyPair } from "./api";
 
 export const LOGIN_EMAIL_INPUT_ID = "login-email";
 
@@ -17,13 +27,68 @@ const Login: React.FC = () => {
 	const [step, setStep] = useState<"credentials" | "2fa">("credentials");
 	const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
-	const { setUserId, setVaultKey, setUsername, setEmail: setAuthEmail, setToken } = useAuth();
+	const [searchParams] = useSearchParams();
+	const returnTo = searchParams.get("returnTo");
+	const { setUserId, setVaultKey, setUsername, setEmail: setAuthEmail, setToken, setRsaPrivateKey, setRsaPublicKey } = useAuth();
 
 	// Store successful password verification results for use after 2FA
 	const loginResultRef = useRef<{ vaultKey: CryptoKey } | null>(null);
 	const loginResponseRef = useRef<any>(null);
 	const authHashRef = useRef<string | null>(null);
 	const twoFaEnabledRef = useRef<boolean>(true);
+
+	/** After the vault key is unlocked, either unwrap the existing RSA key
+	 *  pair or generate+upload one for legacy accounts. Puts the resulting
+	 *  keys into AuthContext. */
+	const setUpRsaKeys = async (
+		response: any,
+		vaultKey: CryptoKey,
+		sessionToken: string
+	) => {
+		try {
+			if (response.public_key && response.encrypted_private_key && response.private_key_iv) {
+				const priv = await unwrapPrivateKeyWithVaultKey(
+					response.encrypted_private_key,
+					response.private_key_iv,
+					vaultKey
+				);
+				const pub = await importPublicKeyB64(response.public_key);
+				setRsaPrivateKey(priv);
+				setRsaPublicKey(pub);
+				return;
+			}
+			// Backfill for accounts created before the sharing rollout
+			const pair = await generateRsaKeyPair();
+			const publicKeySpkiB64 = await exportPublicKeyB64(pair.publicKey);
+			const wrapped = await wrapPrivateKeyWithVaultKey(pair.privateKey, vaultKey);
+			await uploadKeyPair(
+				{
+					publicKeySpkiB64,
+					encryptedPrivateKeyB64: wrapped.encryptedPrivateKeyB64,
+					privateKeyIvB64: wrapped.ivB64,
+					asymmetricKeyAlgorithm: "RSA-OAEP",
+					asymmetricKeyLength: RSA_KEY_LENGTH,
+					asymmetricHash: "SHA-256",
+				},
+				sessionToken
+			);
+			setRsaPrivateKey(pair.privateKey);
+			setRsaPublicKey(pair.publicKey);
+		} catch (e) {
+			// Non-fatal: user can still use the vault, just can't share yet.
+			console.error("Failed to set up RSA keys:", e);
+		}
+	};
+
+	const finishLogin = async (response: any, vaultKey: CryptoKey, sessionToken: string) => {
+		setUserId(response.id);
+		setVaultKey(vaultKey);
+		setUsername(response.username);
+		setAuthEmail(email);
+		setToken(sessionToken);
+		await setUpRsaKeys(response, vaultKey, sessionToken);
+		navigate(returnTo || "/main");
+	};
 
 	const verifyPasswordAgainstServer = async () => {
 		if (!email || !password) {
@@ -90,12 +155,7 @@ const Login: React.FC = () => {
 			if (response.two_fa_enabled === false) {
 				// 2FA disabled — create session and log in
 				const session = await createSession({ email, authHashB64 });
-				setUserId(response.id);
-				setVaultKey(loginResult.vaultKey);
-				setUsername(response.username);
-				setAuthEmail(email);
-				setToken(session.token);
-				navigate("/main");
+				await finishLogin(response, loginResult.vaultKey, session.token);
 			} else {
 				// 2FA enabled — send code and go to verification step
 				await send2fa({ email });
@@ -117,12 +177,7 @@ const Login: React.FC = () => {
 			const { response, loginResult, authHashB64 } = await verifyPasswordAgainstServer();
 
 			const session = await createSession({ email, authHashB64 });
-			setUserId(response.id);
-			setVaultKey(loginResult.vaultKey);
-			setUsername(response.username);
-			setAuthEmail(email);
-			setToken(session.token);
-			navigate("/main");
+			await finishLogin(response, loginResult.vaultKey, session.token);
 		} catch (error: any) {
 			console.error("Login failed:", error);
 			alert(error.message || "Login failed");
@@ -150,12 +205,7 @@ const Login: React.FC = () => {
 			}
 
 			const session = await createSession({ email, authHashB64 });
-			setUserId(response.id);
-			setVaultKey(loginResult.vaultKey);
-			setUsername(response.username);
-			setAuthEmail(email);
-			setToken(session.token);
-			navigate("/main");
+			await finishLogin(response, loginResult.vaultKey, session.token);
 		} catch (error: any) {
 			console.error("Login failed:", error);
 			alert(error.message || "Login failed");

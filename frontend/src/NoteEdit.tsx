@@ -6,6 +6,7 @@ import { getNote, uploadNote, updateNote, deleteNote } from "./api";
 import { encryptNote, decryptNote, encryptSecondPassword } from "./crypto/lockinCrypto";
 import { saveNoteClient, getNoteClient } from "./client_storage";
 import type { EncryptedNote, DecryptedNote, NoteType } from "../../shared_types/note_types";
+import ShareNoteDialog from "./ShareNoteDialog";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 import './NoteEdit.css'
@@ -14,6 +15,7 @@ export const NOTE_TYPE_SELECT_ID = "note-edit-note-type";
 export const ADD_EXTRA_PASSWORD_BUTTON_ID = "note-edit-add-extra-password";
 export const SAVE_TO_SERVER_BUTTON_ID = "note-edit-save-server";
 export const SAVE_TO_CLIENT_BUTTON_ID = "note-edit-save-client";
+export const SHARE_NOTE_BUTTON_ID = "note-edit-share";
 export const NOTE_AUDIO_FILE_INPUT_ID = "note-edit-audio-file";
 export const NOTE_IMAGE_FILE_INPUT_ID = "note-edit-image-file";
 export const NOTE_INLINE_AUDIO_ID = "note-edit-inline-audio";
@@ -60,6 +62,7 @@ function NoteEdit() {
 	
 	const [confirming, setConfirming] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
+	const [showShareDialog, setShowShareDialog] = useState(false);
 	const hideCombo = {
 		key: getKey(),
 		shift: getShift(),
@@ -493,6 +496,18 @@ function NoteEdit() {
 			<button onClick={attachFile}>
 			Attach File
 			</button>
+			<button
+				id={SHARE_NOTE_BUTTON_ID}
+				onClick={() => {
+					if (!userId) {
+						alert("You must be logged in to share a note.");
+						return;
+					}
+					setShowShareDialog(true);
+				}}
+			>
+				Share
+			</button>
 			{noteType === "audio" && (
 				<label className="note-edit-transcript-label">
 					<input
@@ -655,6 +670,26 @@ function NoteEdit() {
 				</div>
 			)}
 		</div>
+		{showShareDialog && userId && (
+			<ShareNoteDialog
+				note={{
+					user_id: userId,
+					id: noteId ?? "",
+					note_title: title,
+					note_text: content,
+					iv_b64: "",
+					pinned: pinned,
+					note_type: noteType,
+					updated_at: new Date().toISOString(),
+					created_at: new Date().toISOString(),
+					second_password: secondPasswordB64,
+					...(noteType === "audio" && wantVoiceTranscript && transcript.length > 0
+						? { note_transcript: transcript }
+						: {}),
+				}}
+				onClose={() => setShowShareDialog(false)}
+			/>
+		)}
 	</div>
   )
 }

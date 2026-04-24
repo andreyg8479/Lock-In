@@ -1,0 +1,53 @@
+.shared-note-view {
+	max-width: 900px;
+	margin: 2rem auto;
+	padding: 1.5rem;
+}
+
+.shared-note-meta {
+	border-bottom: 1px solid #ddd;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.shared-note-meta h2 {
+	margin: 0 0 0.5rem;
+}
+
+.shared-note-meta p {
+	margin: 0.25rem 0;
+	color: #555;
+	font-size: 0.9rem;
+}
+
+.shared-note-body {
+	margin: 1rem 0;
+}
+
+.shared-note-text {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	font-family: inherit;
+	background: #f8f8f8;
+	padding: 0.75rem;
+	border-radius: 4px;
+}
+
+.shared-note-image {
+	max-width: 100%;
+	height: auto;
+}
+
+.shared-note-video {
+	max-width: 100%;
+}
+
+.shared-note-actions {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 1rem;
+}
+
+.shared-note-error {
+	color: #c0392b;
+}

@@ -20,9 +20,10 @@ const supabase = createClient(url, key);
 
 const PORT = process.env.PORT || 8080;
 
-import { handleSignup, handleLogin, deleteAccount, createSession, changeMasterPassword, sendPasswordChangeReminder } from "./controllers/AuthController";
+import { handleSignup, handleLogin, deleteAccount, createSession, changeMasterPassword, sendPasswordChangeReminder, uploadKeyPair } from "./controllers/AuthController";
 import { getAllNoteNames, getNote, uploadNote, deleteNote, updateNote, clearNoteSecondPassword } from "./controllers/VaultController";
 import { handleSend2fa, handleVerify2fa, handleGet2faStatus, handleEnable2fa, handleDisable2fa } from "./controllers/TwoFAController";
+import { lookupUserByEmail, createShare, getShare, listIncomingShares, listOutgoingShares, deleteShare } from "./controllers/ShareController";
 import { requireAuth } from "./middleware/authMiddleware";
 
 // RESTful API routes
@@ -54,6 +55,15 @@ app.put("/api/vault/file/:noteId", updateNote);
 app.post("/api/vault/clearNoteSecondPassword", clearNoteSecondPassword);
 
 app.delete("/api/auth/account", deleteAccount);
+app.post("/api/auth/keypair", requireAuth, uploadKeyPair);
+
+// Note sharing (E2EE, account-to-account)
+app.get("/api/users/lookup", requireAuth, lookupUserByEmail);
+app.post("/api/share", requireAuth, createShare);
+app.get("/api/share/incoming", requireAuth, listIncomingShares);
+app.get("/api/share/outgoing", requireAuth, listOutgoingShares);
+app.get("/api/share/:id", requireAuth, getShare);
+app.delete("/api/share/:id", requireAuth, deleteShare);
 
 // this is to serve the react front end
 const frontendPath = path.resolve(__dirname, "../../frontend/dist");

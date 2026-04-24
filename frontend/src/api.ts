@@ -136,4 +136,122 @@ export async function changeMasterPasswordApi(
 export async function notifyPasswordChangeReminder(token: string): Promise<{ ok: boolean }> {
     return request("POST", "/api/auth/password-reminder/notify", {}, token);
   }
-  
+
+// ─── Note sharing (E2EE) ────────────────────────────────────────────────────
+
+/** Backfill an RSA key pair for a legacy account on its first login after
+ *  the sharing rollout. Server rejects with 409 if one already exists. */
+export async function uploadKeyPair(
+    payload: {
+        publicKeySpkiB64: string;
+        encryptedPrivateKeyB64: string;
+        privateKeyIvB64: string;
+        asymmetricKeyAlgorithm: string;
+        asymmetricKeyLength: number;
+        asymmetricHash: string;
+    },
+    token: string
+): Promise<{ ok: boolean }> {
+    return request("POST", "/api/auth/keypair", payload, token);
+}
+
+export type LookupUserResponse =
+    | { notFound: true }
+    | { notReady: true; username: string }
+    | {
+          id: string;
+          username: string;
+          publicKeySpkiB64: string;
+          asymmetricKeyAlgorithm: string;
+          asymmetricKeyLength: number;
+          asymmetricHash: string;
+      };
+
+export async function lookupUserByEmail(email: string, token: string): Promise<LookupUserResponse> {
+    // Handle 404/409 as typed responses rather than throwing
+    try {
+        const data = await request(
+            "GET",
+            `/api/users/lookup?email=${encodeURIComponent(email)}`,
+            undefined,
+            token
+        );
+        return data as LookupUserResponse;
+    } catch (e: any) {
+        const msg = String(e?.message || e);
+        if (msg.includes("notFound")) return { notFound: true };
+        const m = msg.match(/"username"\s*:\s*"([^"]+)"/);
+        if (msg.includes("notReady")) return { notReady: true, username: m?.[1] ?? "" };
+        throw e;
+    }
+}
+
+export type CreateSharePayload = {
+    recipientId: string;
+    sourceNoteId?: string;
+    noteType: 'text' | 'audio' | 'image' | 'video';
+    note_title: string;
+    note_text: string;
+    iv_text_b64: string;
+    encrypted_share_key_b64: string;
+    expiresAt?: string;
+};
+
+export async function createShare(
+    payload: CreateSharePayload,
+    token: string
+): Promise<{ ok: boolean; shareId: string }> {
+    return request("POST", "/api/share", payload, token);
+}
+
+export type IncomingShareSummary = {
+    id: string;
+    note_type: 'text' | 'audio' | 'image' | 'video';
+    expires_at: string | null;
+    created_at: string;
+    sender_username: string;
+};
+
+export async function listIncomingShares(token: string): Promise<{ shares: IncomingShareSummary[] }> {
+    return request("GET", "/api/share/incoming", undefined, token);
+}
+
+export type OutgoingShareSummary = {
+    id: string;
+    note_type: 'text' | 'audio' | 'image' | 'video';
+    expires_at: string | null;
+    created_at: string;
+    source_note_id: string | null;
+    recipient_username: string;
+    recipient_email: string;
+};
+
+export async function listOutgoingShares(token: string): Promise<{ shares: OutgoingShareSummary[] }> {
+    return request("GET", "/api/share/outgoing", undefined, token);
+}
+
+export type ShareDetail = {
+    share: {
+        id: string;
+        owner_id: string;
+        recipient_id: string;
+        source_note_id: string | null;
+        note_title: string;
+        note_text: string;
+        iv_text_b64: string;
+        note_type: 'text' | 'audio' | 'image' | 'video';
+        encrypted_share_key_b64: string;
+        expires_at: string | null;
+        created_at: string;
+    };
+    sender: { username: string; email: string } | null;
+    viewerIsOwner: boolean;
+};
+
+export async function getShare(id: string, token: string): Promise<ShareDetail> {
+    return request("GET", `/api/share/${encodeURIComponent(id)}`, undefined, token);
+}
+
+export async function deleteShare(id: string, token: string): Promise<{ ok: boolean }> {
+    return request("DELETE", `/api/share/${encodeURIComponent(id)}`, undefined, token);
+}

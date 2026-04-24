@@ -82,6 +82,40 @@ export async function sendPasswordChangeReminderEmail(
     });
 }
 
+export type SendNoteSharedEmailParams = {
+    recipientEmail: string;
+    senderUsername: string;
+    shareId: string;
+    /** ISO timestamp when the share expires, if any. */
+    expiresAt?: string;
+};
+
+/**
+ * Notify a recipient that someone has shared a note with them. The email
+ * contains only a link to the viewer page — the actual note content is
+ * encrypted server-side and fetched on demand when the recipient logs in.
+ */
+export async function sendNoteSharedEmail(
+    params: SendNoteSharedEmailParams
+): Promise<{ ok: boolean; error?: string }> {
+    const { recipientEmail, senderUsername, shareId, expiresAt } = params;
+    const appBase = (process.env.APP_BASE_URL || "http://localhost:5173").replace(/\/$/, "");
+    const link = `${appBase}/shared/${encodeURIComponent(shareId)}`;
+    const expiryLine = expiresAt
+        ? `<p>This link will expire on <strong>${new Date(expiresAt).toUTCString()}</strong>.</p>`
+        : "";
+    return sendEmail({
+        to: recipientEmail,
+        subject: `${senderUsername} shared a note with you on LockIn`,
+        html:
+            `<p><strong>${senderUsername}</strong> has shared a note with you on LockIn.</p>` +
+            `<p>Sign in to view it:</p>` +
+            `<p><a href="${link}">${link}</a></p>` +
+            expiryLine +
+            `<p>The note is end-to-end encrypted; only you can decrypt it after signing in.</p>`
+    });
+}
+
 const TWO_FA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const TWO_FA_LENGTH = 6;
 const CODE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes

@@ -12,6 +12,8 @@ import ChangeMasterPassword from "./ChangeMasterPassword";
 import PasswordMemorizer from "./PasswordMemorizer";
 import ImportNote from "./ImportNote";
 import About from "./About";
+import SharedNoteView from "./SharedNoteView";
+import SharedWithMe from "./SharedWithMe";
 
 
 function PagesList() {
@@ -30,6 +32,7 @@ function PagesList() {
 				<Link to="/PasswordMemorizer"> (PasswordMemorizer)   </Link>
 				<Link to="/ImportNote"> (ImportNote)   </Link>
 				<Link to="/About"> (About)   </Link>
+				<Link to="/SharedWithMe"> (SharedWithMe)   </Link>
 			</div>
 		</div>
 	);
@@ -93,6 +96,8 @@ function App() {
 			<Route path="/PasswordMemorizer" element={<PasswordMemorizer />} />
 			<Route path="/ImportNote" element={<ImportNote />} />
 			<Route path="/About" element={<About />} />
+			<Route path="/shared/:id" element={<SharedNoteView />} />
+			<Route path="/SharedWithMe" element={<SharedWithMe />} />
 		</Routes>
 	</Router>
   )

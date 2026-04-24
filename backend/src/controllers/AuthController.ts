@@ -63,7 +63,14 @@ export async function handleSignup(req: Request, res: Response) {
                 iv: artifacts.ivB64,
                 version: artifacts.v,
                 auth_hash_b64: authHashB64 || null,
-                two_fa_enabled: true} as any // temporary fix to get TS to shut up
+                two_fa_enabled: true,
+                // RSA-OAEP key pair for E2EE note sharing (nullable for older accounts)
+                public_key: artifacts.public_key_spki_b64 || null,
+                encrypted_private_key: artifacts.encrypted_private_key_b64 || null,
+                private_key_iv: artifacts.private_key_iv_b64 || null,
+                asymmetric_key_algorithm: artifacts.asymmetric_key_algorithm || null,
+                asymmetric_key_length: artifacts.asymmetric_key_length || null,
+                asymmetric_hash: artifacts.asymmetric_hash || null} as any // temporary fix to get TS to shut up
             ]);
 
         // Something went wrong in the layer between here and DB
@@ -102,7 +109,7 @@ export async function handleLogin(req: Request, res: Response) {
         // Step 3: search DB for the associated email 
         const { data: rows, error } = await supabase
             .from("users")
-            .select("id, username, email, kdf, iterations, salt, cipher, iv, aes_key_length, gcm_iv_length, wrapped_master_key, version, two_fa_enabled, auth_hash_b64")
+            .select("id, username, email, kdf, iterations, salt, cipher, iv, aes_key_length, gcm_iv_length, wrapped_master_key, version, two_fa_enabled, auth_hash_b64, public_key, encrypted_private_key, private_key_iv, asymmetric_key_algorithm, asymmetric_key_length, asymmetric_hash")
             .eq("email", email);
 
         if (error) {
@@ -281,4 +288,77 @@ export async function deleteAccount(req: Request, res: Response) {
 	return res.status(201).json({ ok: true });
 
 
+}
+
+/**
+ * POST /api/auth/keypair
+ * One-time backfill of RSA-OAEP key pair for legacy accounts created before
+ * the sharing feature. Fails if a public key is already set — callers should
+ * skip this endpoint when `public_key` came back non-null at login.
+ *
+ * Body: {
+ *   publicKeySpkiB64,
+ *   encryptedPrivateKeyB64,
+ *   privateKeyIvB64,
+ *   asymmetricKeyAlgorithm,
+ *   asymmetricKeyLength,
+ *   asymmetricHash,
+ * }
+ */
+export async function uploadKeyPair(req: Request, res: Response) {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+        const {
+            publicKeySpkiB64,
+            encryptedPrivateKeyB64,
+            privateKeyIvB64,
+            asymmetricKeyAlgorithm,
+            asymmetricKeyLength,
+            asymmetricHash,
+        } = req.body ?? {};
+
+        if (
+            !publicKeySpkiB64 ||
+            !encryptedPrivateKeyB64 ||
+            !privateKeyIvB64 ||
+            typeof publicKeySpkiB64 !== "string" ||
+            typeof encryptedPrivateKeyB64 !== "string" ||
+            typeof privateKeyIvB64 !== "string"
+        ) {
+            return res.status(400).json({ error: "Missing key-pair fields" });
+        }
+
+        // Refuse to overwrite an existing key pair — that would silently
+        // invalidate every incoming share currently encrypted to the old key.
+        const { data: rows, error: fetchErr } = await supabase
+            .from("users")
+            .select("public_key")
+            .eq("id", userId);
+
+        if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+        if (!rows || rows.length === 0) return res.status(404).json({ error: "User not found" });
+        if (rows[0].public_key) {
+            return res.status(409).json({ error: "Key pair already exists" });
+        }
+
+        const { error: updateErr } = await supabase
+            .from("users")
+            .update({
+                public_key: publicKeySpkiB64,
+                encrypted_private_key: encryptedPrivateKeyB64,
+                private_key_iv: privateKeyIvB64,
+                asymmetric_key_algorithm: asymmetricKeyAlgorithm || "RSA-OAEP",
+                asymmetric_key_length: asymmetricKeyLength || 2048,
+                asymmetric_hash: asymmetricHash || "SHA-256",
+            } as any)
+            .eq("id", userId);
+
+        if (updateErr) return res.status(500).json({ error: updateErr.message });
+        return res.status(200).json({ ok: true });
+    } catch (e) {
+        console.error("uploadKeyPair error:", e);
+        return res.status(500).json({ error: "Internal server error" });
+    }
 }
