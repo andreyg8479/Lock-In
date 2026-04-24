@@ -10,7 +10,9 @@ let transcriberPromise: Promise<AutomaticSpeechRecognitionPipeline> | null = nul
 
 function getTranscriber(onProgress?: TranscribeProgress) {
 	if (!transcriberPromise) {
-		env.useBrowserCache = true;
+		// Browser cache (IndexedDB/CacheStorage) is unavailable in Node-based test runs.
+		// Enable it only when the browser storage APIs exist.
+		env.useBrowserCache = typeof indexedDB !== "undefined";
 		transcriberPromise = pipeline(
 			"automatic-speech-recognition",
 			WHISPER_TINY_EN,

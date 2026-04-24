@@ -121,24 +121,17 @@ export default function SharedNoteView() {
 			const existingNames = await getExistingNoteNameSet();
 
 			if (existingNames.has(defaultTitle.trim().toLowerCase())) {
-				while (true) {
-					const renamed = prompt(
-						`A note named "${defaultTitle}" already exists.\nEnter a new name for this imported note:`,
-						finalTitle
-					);
-					if (renamed === null) return;
-					const candidate = renamed.trim();
-					if (!candidate) {
-						alert("Note name cannot be empty.");
-						continue;
-					}
-					if (existingNames.has(candidate.toLowerCase())) {
-						alert("That note name already exists. Please choose another.");
-						continue;
-					}
-					finalTitle = candidate;
-					break;
+				const renamed = prompt(
+					`A note named "${defaultTitle}" already exists.\nYou can keep this name or enter a new one:`,
+					finalTitle
+				);
+				if (renamed === null) return;
+				const candidate = renamed.trim();
+				if (!candidate) {
+					alert("Note name cannot be empty.");
+					return;
 				}
+				finalTitle = candidate;
 			}
 
 			const now = new Date().toISOString();
