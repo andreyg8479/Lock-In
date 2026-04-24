@@ -212,6 +212,17 @@ async function deriveAesGcmKeyFromPassword(password: string, salt: Uint8Array, i
 
 import type { EncryptedNote, DecryptedNote } from "../../../shared_types/note_types"
 
+/** v1: audio bytes as base64 + optional transcript, packed as JSON UTF-8 before encryption. */
+const AUDIO_PAYLOAD_V1 = 1
+
+function isAudioWithTranscript(note: DecryptedNote): boolean {
+    return (
+        note.note_type === "audio" &&
+        typeof note.note_transcript === "string" &&
+        note.note_transcript.length > 0
+    );
+}
+
 export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoKey): Promise<EncryptedNote> {
 
     // Step 1: Generate a new random IV (this will never be reused anywhere for security)
@@ -221,8 +232,15 @@ export async function encryptNote(uploadedNote: DecryptedNote, vaultKey: CryptoK
     // For audio/image, note_text is a base64 string of raw binary — decode to raw bytes
     // before encrypting to avoid encrypting the ~33% inflated base64 representation.
     // For text, encode as UTF-8 bytes.
+    // For audio with a transcript, pack audio + transcript as JSON (v1) and UTF-8 encode.
     const contentBuffer = uploadedNote.note_type === 'text'
         ? utf8Bytes(uploadedNote.note_text)
+        : isAudioWithTranscript(uploadedNote)
+        ? utf8Bytes(JSON.stringify({
+            v: AUDIO_PAYLOAD_V1,
+            a: uploadedNote.note_text,
+            t: uploadedNote.note_transcript,
+          }))
         : fromBase64(uploadedNote.note_text);
 
     const ciphertextBuffer = await crypto.subtle.encrypt(
@@ -273,11 +291,37 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
         toArrayBuffer(ciphertext)
     );
 
-    // For audio/image, the decrypted bytes are raw binary — re-encode to base64.
+    // For audio with transcript (v1), plaintext is JSON UTF-8; for other binary types, re-encode to base64.
     // For text, decode as UTF-8 string.
-    const plaintext = encryptedNote.note_type === 'text'
-        ? new TextDecoder().decode(plaintextBuffer)
-        : toBase64(new Uint8Array(plaintextBuffer));
+    let noteText: string
+    let noteTranscript: string | undefined
+    if (encryptedNote.note_type === 'text') {
+        noteText = new TextDecoder().decode(plaintextBuffer);
+        noteTranscript = undefined
+    } else if (encryptedNote.note_type === 'audio') {
+        const bytes = new Uint8Array(plaintextBuffer);
+        if (bytes.length > 0 && bytes[0] === 0x7b) {
+            try {
+                const obj = JSON.parse(new TextDecoder().decode(bytes)) as { v?: number; a?: string; t?: string }
+                if (obj && obj.v === AUDIO_PAYLOAD_V1 && typeof obj.a === "string") {
+                    noteText = obj.a
+                    noteTranscript = typeof obj.t === "string" ? obj.t : undefined
+                } else {
+                    noteText = toBase64(bytes);
+                    noteTranscript = undefined
+                }
+            } catch {
+                noteText = toBase64(bytes);
+                noteTranscript = undefined
+            }
+        } else {
+            noteText = toBase64(bytes);
+            noteTranscript = undefined
+        }
+    } else {
+        noteText = toBase64(new Uint8Array(plaintextBuffer));
+        noteTranscript = undefined
+    }
 
     // Step 2: decrypt the file name
     const combinedName = fromBase64(encryptedNote.note_title);
@@ -296,7 +340,8 @@ export async function decryptNote(encryptedNote: EncryptedNote, vaultKey: Crypto
         user_id: encryptedNote.user_id,
         id: encryptedNote.id,
         note_title: name,
-        note_text: plaintext,
+        note_text: noteText,
+        ...(noteTranscript !== undefined ? { note_transcript: noteTranscript } : {}),
         iv_b64: encryptedNote.iv_b64,
         pinned: encryptedNote.pinned,
         note_type: encryptedNote.note_type,

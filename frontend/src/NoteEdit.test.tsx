@@ -14,6 +14,7 @@ import NoteEdit, {
 	NOTE_INLINE_VIDEO_ID,
 	NOTE_TYPE_SELECT_ID,
 	NOTE_VIDEO_FILE_INPUT_ID,
+	NOTE_VOICE_TRANSCRIPT_CHECKBOX_ID,
 	SAVE_TO_CLIENT_BUTTON_ID,
 	SAVE_TO_SERVER_BUTTON_ID,
 } from "./NoteEdit";
@@ -45,6 +46,15 @@ describe("NoteEdit note type", () => {
 
 		fireEvent.change(select, { target: { value: "image" } });
 		expect(select.value).toBe("image");
+	});
+
+	it("shows the voice transcript checkbox when note type is audio", () => {
+		renderNoteEdit();
+		const select = screen.getByRole("combobox") as HTMLSelectElement;
+		fireEvent.change(select, { target: { value: "audio" } });
+		const box = document.getElementById(NOTE_VOICE_TRANSCRIPT_CHECKBOX_ID);
+		expect(box).not.toBeNull();
+		expect((box as HTMLInputElement).type).toBe("checkbox");
 	});
 });
 

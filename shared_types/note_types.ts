@@ -18,6 +18,8 @@ export type DecryptedNote = {
     id: string,
     note_title: string,
     note_text: string,
+    /** Present for audio notes when a voice transcript was generated (encrypted with the note). */
+    note_transcript?: string,
     iv_b64: string,
     pinned: boolean,
     note_type: NoteType,

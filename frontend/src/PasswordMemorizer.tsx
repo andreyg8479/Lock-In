@@ -15,7 +15,7 @@ function PasswordMemorizer() {
 		navigate("/main");
 	}
 
-	function bottomChanged(newBottom) {
+	function bottomChanged(newBottom: string) {
 	
 		setBottom(newBottom);
 	

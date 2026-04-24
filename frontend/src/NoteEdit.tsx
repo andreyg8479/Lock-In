@@ -20,9 +20,11 @@ export const NOTE_INLINE_AUDIO_ID = "note-edit-inline-audio";
 export const NOTE_INLINE_IMAGE_ID = "note-edit-inline-image";
 export const NOTE_VIDEO_FILE_INPUT_ID = "note-edit-video-file";
 export const NOTE_INLINE_VIDEO_ID = "note-edit-inline-video";
+export const NOTE_VOICE_TRANSCRIPT_CHECKBOX_ID = "note-edit-voice-transcript";
+export const NOTE_TRANSCRIPT_TEXTAREA_ID = "note-edit-transcript";
+export const NOTE_TRANSCRIBE_RETRY_BUTTON_ID = "note-edit-transcribe-retry";
 import { useKeyComboDetector } from './useKeyComboDetector'
 import { getAlt, getCtrl, getKey, getShift } from './SettingsMem'
-
 function NoteEdit() {
 	const navigate = useNavigate();
 	const { userId, vaultKey } = useAuth();
@@ -44,8 +46,14 @@ function NoteEdit() {
 	const [isNoteInfoHidden, setIsNoteInfoHidden] = useState(false);
 	const hideButtonRef = useRef<HTMLButtonElement | null>(null);
 	const audioFileInputRef = useRef<HTMLInputElement | null>(null);
+	const lastAudioFileRef = useRef<File | null>(null);
 	const imageFileInputRef = useRef<HTMLInputElement | null>(null);
 	const videoFileInputRef = useRef<HTMLInputElement | null>(null);
+
+	const [wantVoiceTranscript, setWantVoiceTranscript] = useState(false);
+	const [transcript, setTranscript] = useState("");
+	const [isTranscribing, setIsTranscribing] = useState(false);
+	const [transcribeStatus, setTranscribeStatus] = useState("");
 	
 	const [extraPassword, setExtraPassword] = useState(false);
 	const [secondPasswordB64, setSecondPasswordB64] = useState<string | null>(null);
@@ -84,6 +92,8 @@ function NoteEdit() {
 						if (encryptedNote && vaultKey) {
 							const decrypted = await decryptNote(encryptedNote, vaultKey);
 							setContent(decrypted.note_text);
+							setTranscript(decrypted.note_transcript ?? "");
+							setWantVoiceTranscript(!!(decrypted.note_transcript && decrypted.note_transcript.length > 0));
 							setPinned(decrypted.pinned);
 							setTitle(decrypted.note_title);
 							setNoteType(encryptedNote.note_type || 'text');
@@ -116,8 +126,12 @@ function NoteEdit() {
 								try {
 									const decrypted = await decryptNote(noteData, vaultKey);
 									setContent(decrypted.note_text);
+									setTranscript(decrypted.note_transcript ?? "");
+									setWantVoiceTranscript(!!(decrypted.note_transcript && decrypted.note_transcript.length > 0));
 									setPinned(decrypted.pinned);
-									setTitle(decrypted.note_title);								setNoteType(noteData.note_type || 'text');								} catch (e) {
+									setTitle(decrypted.note_title);
+									setNoteType(noteData.note_type || 'text');
+								} catch (e) {
 									console.error("Decryption failed:", e);
 									alert("Failed to decrypt note. Check your key.");
 								}
@@ -158,6 +172,10 @@ function NoteEdit() {
 			alert("Encryption key not found. Please log in again.");
 			return;
 		}
+		if (isTranscribing) {
+			alert("Please wait for transcription to finish before saving.");
+			return;
+		}
 
 		try {
 			const now = new Date().toISOString();
@@ -172,7 +190,10 @@ function NoteEdit() {
 				note_type: noteType,
 				updated_at: now,
 				created_at: now,
-				second_password: secondPasswordB64
+				second_password: secondPasswordB64,
+				...(noteType === "audio" && wantVoiceTranscript && transcript.length > 0
+					? { note_transcript: transcript }
+					: {}),
 			};
 
 			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
@@ -200,7 +221,11 @@ function NoteEdit() {
 			alert("Encryption key not found. Please log in again.");
 			return;
 		}
-		
+		if (isTranscribing) {
+			alert("Please wait for transcription to finish before saving.");
+			return;
+		}
+
 		try {
 			const id = noteId || crypto.randomUUID();
 			const now = new Date().toISOString();
@@ -215,7 +240,10 @@ function NoteEdit() {
 				note_type: noteType,
 				updated_at: now,
 				created_at: now,
-				second_password: secondPasswordB64
+				second_password: secondPasswordB64,
+				...(noteType === "audio" && wantVoiceTranscript && transcript.length > 0
+					? { note_transcript: transcript }
+					: {}),
 			};
 
 			const encryptedNote = await encryptNote(noteToEncrypt, vaultKey);
@@ -261,6 +289,25 @@ function NoteEdit() {
 		'video/mp4': 'video',
 	};
 
+	const runTranscription = async (file: File) => {
+		setIsTranscribing(true);
+		setTranscribeStatus("Preparing transcription…");
+		setTranscript("");
+		try {
+			const { transcribeAudioFile } = await import("./transcribeAudio");
+			const text = await transcribeAudioFile(file, (m) => setTranscribeStatus(m));
+			setTranscript(text);
+		} catch (error) {
+			console.error("Transcription failed:", error);
+			alert(
+				`Transcription failed. You can still save the audio only, or use Retry after fixing your connection.\n\n${error instanceof Error ? error.message : String(error)}`,
+			);
+		} finally {
+			setIsTranscribing(false);
+			setTranscribeStatus("");
+		}
+	};
+
 	const processFile = async (file: File) => {
 		const detectedType = ACCEPTED_MIME_TYPES[file.type];
 		if (!detectedType) {
@@ -278,6 +325,18 @@ function NoteEdit() {
 			const buffer = await file.arrayBuffer();
 			setContent(arrayBufferToBase64(buffer));
 			setNoteType(detectedType);
+			if (detectedType === "audio") {
+				lastAudioFileRef.current = file;
+				if (wantVoiceTranscript) {
+					void runTranscription(file);
+				} else {
+					setTranscript("");
+				}
+			} else {
+				lastAudioFileRef.current = null;
+				setTranscript("");
+				setWantVoiceTranscript(false);
+			}
 		} catch (error) {
 			console.error("Failed to process file:", error);
 			alert("Failed to process the selected file.");
@@ -434,6 +493,27 @@ function NoteEdit() {
 			<button onClick={attachFile}>
 			Attach File
 			</button>
+			{noteType === "audio" && (
+				<label className="note-edit-transcript-label">
+					<input
+						id={NOTE_VOICE_TRANSCRIPT_CHECKBOX_ID}
+						type="checkbox"
+						checked={wantVoiceTranscript}
+						disabled={isTranscribing}
+						onChange={(e) => {
+							const on = e.target.checked;
+							setWantVoiceTranscript(on);
+							if (!on) {
+								setTranscript("");
+							} else if (content && lastAudioFileRef.current) {
+								void runTranscription(lastAudioFileRef.current);
+							}
+						}}
+					/>{" "}
+					Voice transcript (Whisper tiny, runs in browser; first use downloads the model)
+				</label>
+			)}
+
 			<select
 				id={NOTE_TYPE_SELECT_ID}
 				value={noteType}
@@ -442,6 +522,11 @@ function NoteEdit() {
 					if (noteType !== 'text' && newType === 'text') {
 						if (!confirm("Switching to text will clear the current media content. Continue?")) return;
 						setContent("");
+					}
+					if (newType !== "audio") {
+						setWantVoiceTranscript(false);
+						setTranscript("");
+						lastAudioFileRef.current = null;
 					}
 					setNoteType(newType);
 				}}
@@ -494,12 +579,51 @@ function NoteEdit() {
 			)}
 
 			{noteType === 'audio' && content && (
-				<div className={`note-media ${isNoteInfoHidden ? "note-info-hidden" : ""}`}>
+				<div
+					className={`note-media note-media-with-transcript ${
+						isNoteInfoHidden ? "note-info-hidden" : ""
+					}`}
+				>
 					<audio
 						id={NOTE_INLINE_AUDIO_ID}
 						controls
 						src={`data:audio/mpeg;base64,${content}`}
 					/>
+					{isTranscribing && (
+						<p className="note-transcribe-status" role="status">
+							{transcribeStatus || "Working…"}
+						</p>
+					)}
+					{(transcript || wantVoiceTranscript) && !isTranscribing && (
+						<div className="note-transcript-block">
+							<label htmlFor={NOTE_TRANSCRIPT_TEXTAREA_ID}>Transcript (editable)</label>
+							<textarea
+								id={NOTE_TRANSCRIPT_TEXTAREA_ID}
+								className="note-transcript"
+								placeholder={
+									wantVoiceTranscript
+										? "Transcript will appear here after processing."
+										: "Enable voice transcript and attach an MP3, or load a note that includes one."
+								}
+								value={transcript}
+								onChange={(e) => setTranscript(e.target.value)}
+							/>
+							{wantVoiceTranscript && lastAudioFileRef.current && (
+								<button
+									type="button"
+									id={NOTE_TRANSCRIBE_RETRY_BUTTON_ID}
+									disabled={isTranscribing}
+									onClick={() => {
+										if (lastAudioFileRef.current) {
+											void runTranscription(lastAudioFileRef.current);
+										}
+									}}
+								>
+									Re-run transcription
+								</button>
+							)}
+						</div>
+					)}
 				</div>
 			)}
 

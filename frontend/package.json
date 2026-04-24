@@ -13,6 +13,7 @@
     "test:list-passed": "node ./scripts/list-frontend-tests.mjs passed"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"
