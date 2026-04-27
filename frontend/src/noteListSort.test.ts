@@ -1,7 +1,7 @@
 // import { describe, it, expect } from "vitest";
 import { describe, it } from "vitest";
 
-describe.skip("noteListSort", () => {
+describe("noteListSort", () => {
 	it("is temporarily skipped", () => {});
 });
 

@@ -18,7 +18,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe.skip("signup route tests (temporarily skipped)", () => {
+describe("signup route tests (temporarily skipped)", () => {
 test("signup succeeds and returns ok:true", async () => {
   mockInsert.mockResolvedValue({ data: [{}], error: null });
   const body = {
