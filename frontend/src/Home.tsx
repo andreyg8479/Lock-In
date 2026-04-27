@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "./AuthContext";
-import { notifyPasswordChangeReminder } from "./api";
 
 import "./Home.css";
 
@@ -28,7 +26,6 @@ function mobileTabClass(active: boolean): string {
  */
 function Home() {
 	const { pathname } = useLocation();
-	const { email, token } = useAuth();
 	
 	
 
@@ -127,7 +124,7 @@ function Home() {
 							<p className="text-on-surface-variant text-lg lg:text-xl max-w-xl mb-12 font-body leading-relaxed">
 								The world&apos;s most secure digital vault for your sensitive notes. Forged in the midnight Navy of deep-security architecture, ensuring your data remains invisible to the world.
 							</p>
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div className="grid grid-cols-2 gap-4">
 								<Link
 									className="primary-gradient text-on-primary-fixed p-6 rounded-xl flex flex-col justify-between group hover:scale-[1.02] transition-transform shadow-2xl"
 									to="/SignUp"
