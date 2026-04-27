@@ -1,3 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+	--color-background: #0b1326;
+	--color-on-background: #e2e8f0;
+	--color-on-surface: #f1f5f9;
+	--color-on-surface-variant: #94a3b8;
+	--color-primary: #7c8cff;
+	--color-primary-container: #3c4fd6;
+	--color-on-primary-fixed: #f8fafc;
+	--color-tertiary: #34d399;
+	--color-tertiary-container: #0d3d2e;
+	--color-secondary: #a5b4fc;
+	--color-error: #f87171;
+	--color-outline-variant: #434656;
+	--color-surface-container-low: #080f1d;
+	--color-surface-container: #111827;
+	--color-surface-container-high: #171f33;
+	--color-surface-container-highest: #1e293b;
+	--font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
+	--font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Light theme: default for first paint (matches SettingsMem default) */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
