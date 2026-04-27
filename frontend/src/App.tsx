@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
 
 import "./App.css";
 import NoteEdit from "./NoteEdit";
@@ -13,7 +14,11 @@ import ImportNote from "./ImportNote";
 import About from "./About";
 import SharedNoteView from "./SharedNoteView";
 import SharedWithMe from "./SharedWithMe";
-import Home from "./Home";
+import {
+ setLoginCount,
+ getLoginCount,
+ getReminderTime
+ } from "./SettingsMem";
 
 
 
@@ -40,6 +45,61 @@ function PagesList() {
 		</div>
 	);
 }
+
+
+function Home() {
+	const navigate = useNavigate();
+	
+	const threshold = getReminderTime();
+	if (threshold <= 0) return;
+
+	let loginCount = getLoginCount();
+	
+	loginCount = loginCount + 1;
+	setLoginCount(loginCount);
+	console.log(loginCount);
+
+	if (loginCount >= threshold * 2) {
+
+		setLoginCount(0);
+		alert("Reminder to Change Your Password");
+
+	}
+
+	return (
+		<div className="auth-landing">
+			<h1 className="auth-landing-title">Welcome to Lock-In!</h1>
+			<button type="button" onClick={() => navigate("/SignUp")}>
+				Sign up
+			</button>
+			<button type="button" onClick={() => navigate("/Login")}>
+				Log in
+			</button>
+			<button type="button" onClick={() => navigate("/NoteList")}>
+				Go To Note List
+			</button>
+			<button type="button" onClick={() => navigate("/NoteEdit")}>
+				Make New Note
+			</button>
+			<button type="button" onClick={() => navigate("/Settings")}>
+				Settings
+			</button>
+			<button type="button" onClick={() => navigate("/DeleteAll")}>
+				Delete All Data
+			</button>
+			<button type="button" onClick={() => navigate("/PasswordMemorizer")}>
+				Password Memorizer
+			</button>
+			<button type="button" onClick={() => navigate("/ImportNote")}>
+				Import Note
+			</button>
+			<button type="button" onClick={() => navigate("/About")}>
+				About
+			</button>
+		</div>
+	);
+}
+
 
 
 function App() {

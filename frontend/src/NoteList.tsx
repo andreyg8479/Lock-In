@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { sortNotes, type SortOption } from "./noteListSort";
 import { getAllNoteNames as loadNotes } from "./api";
@@ -360,108 +360,52 @@ function NotePage() {
 	}
 
 	function renderNoteList(notes: DisplayNote[]) {
+	  
 		const listBox = document.getElementById("noteList");
 		if (!listBox) return;
-
+		
+		// If the list is currently hidden, do not update its contents
 		if (isListHidden) return;
-
+		
 		listBox.innerHTML = "";
-
-		const visible = notes.filter(
-			(n) => showTypes === "all" || n.note_type === showTypes,
-		);
-		const totalInVault = notesCacheRef.current.length;
-
-		if (visible.length === 0) {
-			listBox.removeAttribute("role");
-			const empty = document.createElement("div");
-			empty.className = "note-list-empty";
-			const title = document.createElement("p");
-			title.className = "note-list-empty-title";
-			const hint = document.createElement("p");
-			hint.className = "note-list-empty-hint";
-			if (totalInVault === 0) {
-				title.textContent = "No notes in your vault yet";
-				hint.textContent = "When you add notes on this device or sync from the server, they will show up here.";
-			} else if (notes.length === 0) {
-				title.textContent = "No matches for your search or date filters";
-				hint.textContent = "Clear the search box or date range, or check spelling.";
-			} else {
-				title.textContent = "No notes of this type";
-				hint.textContent = "Try “All types” in the filter, or add a new note in this format.";
+		
+		for (const note of notes) {
+		
+			if (showTypes !== 'all') {
+				if (note.note_type !== showTypes) {
+					continue;
+				}
 			}
-			empty.appendChild(title);
-			empty.appendChild(hint);
-			if (totalInVault === 0) {
-				const cta = document.createElement("button");
-				cta.type = "button";
-				cta.className = "note-list-btn note-list-btn--primary";
-				cta.textContent = "New note";
-				cta.addEventListener("click", () => navigate("/NoteEdit"));
-				empty.appendChild(cta);
-			}
-			listBox.appendChild(empty);
-			return;
-		}
-
-		listBox.setAttribute("role", "list");
-		listBox.setAttribute("aria-label", "Your notes");
-
-		for (const note of visible) {
+		
 			const item = document.createElement("div");
 			item.className = "list-item";
-			item.setAttribute("role", "listitem");
-			if (note.pinned) item.classList.add("list-item--pinned");
 
 			const left = document.createElement("div");
 			left.className = "list-item-left";
 
-			const storageBadge = document.createElement("span");
-			storageBadge.className = note.client
-				? "note-storage-badge note-storage-badge--local"
-				: "note-storage-badge note-storage-badge--server";
-			storageBadge.textContent = note.client ? "This device" : "Server";
-			storageBadge.title = note.client
-				? "Saved only on this device"
-				: "Synced to your account on the server";
-			left.appendChild(storageBadge);
-
-			if (note.pinned) {
-				const pin = document.createElement("span");
-				pin.className = "list-item-pinned";
-				pin.setAttribute("aria-label", "Pinned");
-				pin.setAttribute("aria-hidden", "true");
-				pin.textContent = "\u{1F4CC}";
-				left.appendChild(pin);
-			}
+			const storageIcon = document.createElement("span");
+			storageIcon.className = "note-storage-icon";
+			storageIcon.textContent = note.client ? "💾" : "☁️";
+			storageIcon.title = note.client
+				? "Saved on this device (client)"
+				: "Saved on server";
+			storageIcon.setAttribute("aria-label", storageIcon.title);
+			left.appendChild(storageIcon);
 
 			const name = document.createElement("span");
 			name.className = "list-item-title";
-			name.textContent = note.note_title;
-			if (note.pinned) {
-				name.title = `Pinned — ${note.note_title}`;
-			}
+			name.textContent = note.pinned ? "📌 " + note.note_title : note.note_title;
 			left.appendChild(name);
 
 			item.appendChild(left);
-
+			
 			const editButton = document.createElement("button");
-			editButton.type = "button";
+			editButton.textContent = "🖉";
 			editButton.className = "edit-button";
-			const openIcon = document.createElement("span");
-			openIcon.className = "material-symbols-outlined edit-icon";
-			openIcon.setAttribute("aria-hidden", "true");
-			openIcon.textContent = "edit_note";
-			const openLabel = document.createElement("span");
-			openLabel.className = "edit-label";
-			openLabel.textContent = "Open";
-			editButton.appendChild(openIcon);
-			editButton.appendChild(openLabel);
 			if (FAKE_NOTE_LIST_PREVIEW) {
 				editButton.disabled = true;
-				editButton.title = "Preview only — log in to open notes";
+				editButton.title = "Preview only — login to open notes";
 			} else {
-				editButton.setAttribute("aria-label", `Open ${note.note_title}`);
 				editButton.addEventListener("click", async () => {
 					if (note.second_password) {
 						if (!vaultKey) {
@@ -481,11 +425,15 @@ function NotePage() {
 					navigate("/NoteEdit", { state: { noteId: note.id, noteName: note.note_title, client: note.client } });
 				});
 			}
-
+			
 			item.appendChild(editButton);
-
+			
 			listBox.appendChild(item);
 		}
+	}
+	
+	function homeButton() {
+		navigate("/main");
 	}
 	
 	const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -497,26 +445,14 @@ function NotePage() {
 	};
 
   return (
-	<div className="note-list-page">
-		<header className="note-list-header">
-			<div className="note-list-header-main">
-				<Link to="/" className="note-list-back" title="Back to home" aria-label="Back to home">
-					<span className="material-symbols-outlined" aria-hidden>arrow_back</span>
-				</Link>
-				<div className="note-list-title-block">
-					<h1>Your notes</h1>
-					<p className="note-list-subtitle">Search, filter, and open your encrypted notes.</p>
-				</div>
-			</div>
-			<div className="note-list-header-actions">
-				<button type="button" className="note-list-btn note-list-btn--ghost" onClick={() => loadList()}>
-					Refresh
-				</button>
-				<button type="button" className="note-list-btn note-list-btn--primary" onClick={() => navigate("/NoteEdit")}>
-					New note
-				</button>
-			</div>
-		</header>
+	<div className="list-page">
+	
+		<div className="top-bar">
+			<button className="home-button" onClick={homeButton}>Home</button>
+			<h1>Your Notes</h1>
+			<button className="refresh-button" onClick={() => loadList()} >Refresh</button>
+			<button className="add-button" onClick={() => navigate("/NoteEdit")}>+ New</button>
+		</div>
 
 		{listLoadError ? (
 			<div
@@ -534,129 +470,124 @@ function NotePage() {
 				</button>
 			</div>
 		) : null}
-
-		<div className="note-list-toolbar">
-			<div className="note-list-search-row">
-				<input
-					className="note-list-search"
-					type="text"
-					placeholder="Search by title…"
-					value={searchTerm}
-					onChange={handleInputChange}
-					aria-label="Search notes by title"
-				/>
+	
+		<div className="controls">
+			<input 
+				type="text" 
+				placeholder="Search..."
+			    value={searchTerm}
+				onChange={handleInputChange}
+			/>
+			<button
+				type="button"
+				className="hide-list-button"
+				ref={hideButtonRef}
+				onClick={toggleListVisibility}
+			>
+				{isListHidden ? "Unhide Notes" : "Hide Notes"}
+			</button>
+			<select
+				value={sortBy}
+				onChange={(e) => setSortBy(e.target.value as SortOption)}
+			>
+				<option value="byName">By Name</option>
+				<option value="byModified">By Modified</option>
+				<option value="byCreated">By Created</option>
+			</select>
+			
+			
+			<select
+				value={showTypes}
+				onChange={(e) => setShowTypes(e.target.value as NoteType | 'all')}
+			>
+				<option value="all">All Types</option>
+				<option value="text">Text Only</option>
+				<option value="audio">Audio Only</option>
+				<option value="image">Image Only</option>
+				<option value="video">Video Only</option>
+			</select>
+			<div className="date-filter-wrap" ref={dateFilterWrapRef}>
 				<button
 					type="button"
-					className="note-list-btn note-list-btn--ghost"
-					ref={hideButtonRef}
-					onClick={toggleListVisibility}
+					className={`date-filter-trigger${dateFrom || dateTo ? " date-filter-trigger-active" : ""}`}
+					onClick={() => setDateFilterOpen((o) => !o)}
+					aria-expanded={dateFilterOpen}
+					aria-haspopup="dialog"
 				>
-					{isListHidden ? "Unhide list" : "Hide list"}
-				</button>
-			</div>
-			<div className="note-list-filters">
-				<div className="note-list-labeled-select">
-					<span className="date-filter-sublabel">Sort</span>
-					<select
-						value={sortBy}
-						aria-label="Sort notes by"
-						onChange={(e) => setSortBy(e.target.value as SortOption)}
-					>
-						<option value="byName">Name</option>
-						<option value="byModified">Last modified</option>
-						<option value="byCreated">Date created</option>
-					</select>
-				</div>
-				<div className="note-list-labeled-select">
-					<span className="date-filter-sublabel">Type</span>
-					<select
-						value={showTypes}
-						aria-label="Filter by note type"
-						onChange={(e) => setShowTypes(e.target.value as NoteType | "all")}
-					>
-						<option value="all">All types</option>
-						<option value="text">Text</option>
-						<option value="audio">Audio</option>
-						<option value="image">Image</option>
-						<option value="video">Video</option>
-					</select>
-				</div>
-				<div className="date-filter-wrap" ref={dateFilterWrapRef}>
-					<button
-						type="button"
-						className={`date-filter-trigger${dateFrom || dateTo ? " date-filter-trigger-active" : ""}`}
-						onClick={() => setDateFilterOpen((o) => !o)}
-						aria-expanded={dateFilterOpen}
-						aria-haspopup="dialog"
-					>
-						Date range
-						{dateFrom || dateTo ? (
-							<span className="date-filter-active-indicator" aria-hidden="true" />
-						) : null}
-					</button>
-					{dateFilterOpen ? (
-						<div className="date-filter-popover" role="dialog" aria-label="Filter notes by date">
-							<div className="date-filter-popover-inner">
-								<label className="date-filter-field-label">
-									<span className="date-filter-label-text">Filter by</span>
-									<select
-										value={dateFilterField}
-										onChange={(e) => setDateFilterField(e.target.value as DateFilterField)}
-										aria-label="Filter dates by"
-									>
-										<option value="updated">Updated</option>
-										<option value="created">Created</option>
-									</select>
-								</label>
-								<div className="date-filter-dates-row">
-									<label className="date-filter-date-label">
-										<span className="date-filter-sublabel">From</span>
-										<input
-											type="date"
-											value={dateFrom}
-											max={todayMax}
-											onChange={(e) => {
-												const next = e.target.value;
-												setDateFrom(next);
-												setDateFilterError(dateRangeValidationMessage(next, dateTo));
-											}}
-											aria-label="Date from"
-											aria-invalid={dateFilterError ? true : undefined}
-										/>
-									</label>
-									<span className="date-filter-to" aria-hidden="true">
-										–
-									</span>
-									<label className="date-filter-date-label">
-										<span className="date-filter-sublabel">To</span>
-										<input
-											type="date"
-											value={dateTo}
-											max={todayMax}
-											onChange={(e) => {
-												const next = e.target.value;
-												setDateTo(next);
-												setDateFilterError(dateRangeValidationMessage(dateFrom, next));
-											}}
-											aria-label="Date to"
-											aria-invalid={dateFilterError ? true : undefined}
-										/>
-									</label>
-								</div>
-								{dateFilterError ? (
-									<p className="date-filter-inline-error" role="alert">
-										{dateFilterError}
-									</p>
-								) : null}
-							</div>
-						</div>
+					Date range
+					{(dateFrom || dateTo) ? (
+						<span className="date-filter-active-indicator" aria-hidden="true" />
 					) : null}
-				</div>
+				</button>
+				{dateFilterOpen ? (
+					<div
+						className="date-filter-popover"
+						role="dialog"
+						aria-label="Filter notes by date"
+					>
+						<div className="date-filter-popover-inner">
+							<label className="date-filter-field-label">
+								<span className="date-filter-label-text">Filter by</span>
+								<select
+									value={dateFilterField}
+									onChange={(e) => setDateFilterField(e.target.value as DateFilterField)}
+									aria-label="Filter dates by"
+								>
+									<option value="updated">Updated</option>
+									<option value="created">Created</option>
+								</select>
+							</label>
+							<div className="date-filter-dates-row">
+								<label className="date-filter-date-label">
+									<span className="date-filter-sublabel">From</span>
+									<input
+										type="date"
+										value={dateFrom}
+										max={todayMax}
+										onChange={(e) => {
+											const next = e.target.value
+											setDateFrom(next)
+											setDateFilterError(dateRangeValidationMessage(next, dateTo))
+										}}
+										aria-label="Date from"
+										aria-invalid={dateFilterError ? true : undefined}
+									/>
+								</label>
+								<span className="date-filter-to" aria-hidden="true">–</span>
+								<label className="date-filter-date-label">
+									<span className="date-filter-sublabel">To</span>
+									<input
+										type="date"
+										value={dateTo}
+										max={todayMax}
+										onChange={(e) => {
+											const next = e.target.value
+											setDateTo(next)
+											setDateFilterError(dateRangeValidationMessage(dateFrom, next))
+										}}
+										aria-label="Date to"
+										aria-invalid={dateFilterError ? true : undefined}
+									/>
+								</label>
+							</div>
+							{dateFilterError ? (
+								<p className="date-filter-inline-error" role="alert">
+									{dateFilterError}
+								</p>
+							) : null}
+						</div>
+					</div>
+				) : null}
 			</div>
 		</div>
 		<div className="list-container">
-			<div className={`list-box ${isListHidden ? "list-box-hidden" : ""}`} id="noteList" />
+			<div
+				className={`list-box ${isListHidden ? "list-box-hidden" : ""}`}
+				id="noteList"
+			>
+			</div>
 		</div>
+		
 	</div>
   )
 }

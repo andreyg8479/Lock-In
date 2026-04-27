@@ -25,10 +25,10 @@ describe("Home page content", () => {
 	it("shows basic usage actions and security information", () => {
 		renderHome();
 
-		expect(screen.getByText("Go to note list")).toBeTruthy();
-		expect(screen.getByText("New note")).toBeTruthy();
-		expect(screen.getByText("Vault settings")).toBeTruthy();
+		expect(screen.getByText("Go To Note List")).toBeTruthy();
+		expect(screen.getByText("Make New Note")).toBeTruthy();
+		expect(screen.getByText("Vault Settings")).toBeTruthy();
 		expect(screen.getByText("Military Grade Encryption Active")).toBeTruthy();
-		expect(screen.getByText("Zero-knowledge")).toBeTruthy();
+		expect(screen.getByText("Zero-Knowledge")).toBeTruthy();
 	});
 });
