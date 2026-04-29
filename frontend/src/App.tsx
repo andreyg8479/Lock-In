@@ -75,6 +75,9 @@ function Home() {
 			<button type="button" onClick={() => navigate("/About")}>
 				About
 			</button>
+			<button type="button" onClick={() => navigate("/SharedWithMe")}>
+				Shared With Me
+			</button>
 		</div>
 	);
 }
