@@ -14,11 +14,6 @@ import ImportNote from "./ImportNote";
 import About from "./About";
 import SharedNoteView from "./SharedNoteView";
 import SharedWithMe from "./SharedWithMe";
-import {
- setLoginCount,
- getLoginCount,
- getReminderTime
- } from "./SettingsMem";
 
 
 
@@ -49,22 +44,6 @@ function PagesList() {
 
 function Home() {
 	const navigate = useNavigate();
-	
-	const threshold = getReminderTime();
-	if (threshold <= 0) return;
-
-	let loginCount = getLoginCount();
-	
-	loginCount = loginCount + 1;
-	setLoginCount(loginCount);
-	console.log(loginCount);
-
-	if (loginCount >= threshold * 2) {
-
-		setLoginCount(0);
-		alert("Reminder to Change Your Password");
-
-	}
 
 	return (
 		<div className="auth-landing">

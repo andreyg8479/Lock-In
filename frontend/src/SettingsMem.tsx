@@ -98,6 +98,23 @@ export function setLoginCount(loginCount: number) {
 	localStorage.setItem('loginCount', loginCount.toString());
 }
 
+/**
+ * Call after each successful login. If Settings configures a reminder every N logins (N greater than zero),
+ * increments the counter and may show an alert after the Nth login (then resets the counter).
+ */
+export function recordSuccessfulLogin(): void {
+	const threshold = getReminderTime();
+	if (threshold <= 0) return;
+
+	let loginCount = getLoginCount() + 1;
+	setLoginCount(loginCount);
+
+	if (loginCount >= threshold) {
+		setLoginCount(0);
+		alert("Reminder to Change Your Password");
+	}
+}
+
 export function getReminderTime() {
 	const reminderTime = localStorage.getItem("reminderTime");
 	if (reminderTime != null && reminderTime !== "") {

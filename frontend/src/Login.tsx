@@ -5,6 +5,7 @@ import "./Login.css";
 import { useAuth } from "./AuthContext";
 
 import type { SignupCryptoArtifacts } from "./crypto/lockinCrypto";
+import { recordSuccessfulLogin } from "./SettingsMem";
 import {
 	handleLogin,
 	deriveAuthHash,
@@ -87,6 +88,7 @@ const Login: React.FC = () => {
 		setAuthEmail(email);
 		setToken(sessionToken);
 		await setUpRsaKeys(response, vaultKey, sessionToken);
+		recordSuccessfulLogin();
 		navigate(returnTo || "/main");
 	};
 
